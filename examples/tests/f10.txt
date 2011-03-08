@@ -1,0 +1,3 @@
+seq name = a, length = 3;
+   integer name = x, range = [-10,10];
+end;

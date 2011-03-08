@@ -1,0 +1,4 @@
+integer name = N, range = [1, 10^3];
+seq name = a, length = N;
+   integer name = ai, range = [0, N];
+end;

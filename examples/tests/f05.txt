@@ -1,0 +1,6 @@
+seq name = a, length = 10;
+   seq name = b, length = 5;
+      integer name = x, range = [0,1];
+   end;
+   newline;
+end;

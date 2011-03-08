@@ -1,0 +1,5 @@
+integer name = n, range = [1,10^2];
+newline;
+seq name = a, length = n;
+   integer name=x, range=[-10^2,10^2];
+end;

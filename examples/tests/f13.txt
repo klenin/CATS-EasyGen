@@ -1,0 +1,10 @@
+integer name = m, range = [1, 100]; 
+newline;
+string name = s, lenrange = m, chars = {A-Z}; 
+newline;
+seq name = seq1, length = m;
+   string name = type, lenrange = 1, chars = {A-Z};
+   integer name = x, range = [-100, 100];
+   integer name = y, range = [0, 100];
+   newline;   
+end;
