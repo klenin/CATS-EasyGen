@@ -19,5 +19,5 @@ parser.o:
 	gcc -c $(PARSER_LIB)/parser.c -I$(PARSER_LIB)
 
 clean:
-	rm -f parselib.a parser.o easygen.o gen.o
+	rm -f parselib.a parser.o easygen.o gen.o gen.exe
 

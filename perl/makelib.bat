@@ -5,13 +5,13 @@ set BUILD=FormalInput
 set BIN=%~dp0bin
 
 if exist %BUILD% (
-	rmdir /S /Q %BUILD%
+    rmdir /S /Q %BUILD%
 )
 
 call h2xs -Afn %BUILD%
 
 for /F %%f in ('dir /B "%PARSER%"') do (
-	copy "%PARSER%\%%f" "%BUILD%"
+    copy "%PARSER%\%%f" "%BUILD%"
 )
 
 call h2xs -Oan %BUILD%
