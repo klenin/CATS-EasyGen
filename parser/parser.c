@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+
 #include "parser.h"
+#include "mt19937-64.h"
 
 #define charNumber 256
 #define tmpBufSize 10240
@@ -115,8 +117,6 @@ static struct parseError* lastError;
 static void genParseError(int errCode);
 
 //------------------------------random numbers generation----------------------
-#include "mt19937-64.inc"
-
 static UINT64 nextRand()
 {
     return genrand64_int64();
