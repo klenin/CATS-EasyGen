@@ -1,0 +1,14 @@
+# NMake makefile
+
+BINARIES = bin
+LIBRARIES = lib
+BUILD = build
+
+all: $(BUILD)
+	@CD $(BUILD) && cmake -G "NMake Makefiles" .. && $(MAKE)
+
+clean:
+	DEL /S /Q $(BINARIES) $(LIBRARIES) $(BUILD)
+
+$(BUILD):
+	@MKDIR $@
