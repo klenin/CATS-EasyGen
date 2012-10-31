@@ -1,14 +1,8 @@
 #ifndef __PARSER_H__
 #define __PARSER_H__
 
-#ifdef __BORLANDC__
-    #define INT64 __int64
-    #define UINT64 unsigned __int64
-#else
-    #define INT64 long long
-    #define UINT64 unsigned long long
-#endif
-#define real long double
+#include "numerics.h"
+#include "random.h"
 
 enum objKind {oNewLine, oSoftLine, oInteger, oFloat, oString, oSeq, oEnd};
 
@@ -74,12 +68,6 @@ struct parseError
     size_t line, pos;
     int code;
 };
-
-//arithmetcis utilities
-INT64 genRandInt(INT64 l, INT64 r);
-void setRandSeed(INT64 randseed);
-real genRandFloat(INT64 l, INT64 r, int d);
-size_t getMaxIntLen();
 
 // all destructors free memory for object and it's internal structures
 void exprDestructor(struct expr* a);

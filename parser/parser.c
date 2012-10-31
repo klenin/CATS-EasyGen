@@ -9,7 +9,7 @@
 #include <math.h>
 
 #include "parser.h"
-#include "mt19937-64.h"
+#include "random.h"
 
 #define charNumber 256
 #define tmpBufSize 10240
@@ -18,15 +18,6 @@
 #define objCount 7
 #define allAttrCount 6
 #define priorityNumber 3
-
-#define maxIntValue 9223372036854775807LL
-INT64 getMaxIntValue() {return maxIntValue;}
-#define maxIntLen 19
-size_t getMaxIntLen() {return maxIntLen;}
-#define maxFloatDigits 12
-int getMaxFloatDigits() {return maxFloatDigits;}
-#define eps 1e-13
-real getEps() {return eps;}
 
 enum attrKind {aName, aRange, aDigits, aChars, aLength, aLenRange};
 
@@ -115,47 +106,6 @@ static struct parseError* lastError;
 #endif
 
 static void genParseError(int errCode);
-
-//------------------------------random numbers generation----------------------
-static UINT64 nextRand()
-{
-    return genrand64_int64();
-}
-
-INT64 genRandInt(INT64 l, INT64 r)
-{
-    UINT64 x, mod;
-    if (r < l) genParseError(35);
-    x = nextRand();
-    mod = (UINT64)(r-l)+1;
-    return l + (x%mod);
-}
-
-real genRandFloat(INT64 l, INT64 r, int d)
-{
-    real d10, x;
-    UINT64 len, tmp;
-    INT64 tmp1;
-    int i, k;
-
-    if (r <= l) return (real)l;
-    len = r-l+1;
-    if (!len) len--;
-
-    k = 0; tmp = len;
-    while (tmp) {k++; tmp /= 10;}
-    if (k + d >= maxIntLen) d = maxIntLen-1-k;
-
-    for (i = 1, d10 = 1; i <= d; i++) d10 *= 10;
-    tmp1 = genRandInt(l*d10, r*d10);
-    x = tmp1 / (real)d10;
-    return x;
-}
-
-void setRandSeed(INT64 randseed)
-{
-    init_genrand64(randseed);
-}
 
 //------------------------------ work with memory procedures-------------------
 void parseErrorDestructor(struct parseError* a)
