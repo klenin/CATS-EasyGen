@@ -53,6 +53,7 @@
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
 */
 
+#include <stdint.h>
 
 #define NN 312
 #define MM 156
@@ -62,12 +63,12 @@
 
 
 /* The array for the state vector */
-static UINT64 mt[NN]; 
+static uint64_t mt[NN]; 
 /* mti==NN+1 means mt[NN] is not initialized */
 static int mti=NN+1; 
 
 /* initializes mt[NN] with a seed */
-void init_genrand64(UINT64 seed)
+void init_genrand64(uint64_t seed)
 {
     mt[0] = seed;
     for (mti=1; mti<NN; mti++) 
@@ -77,9 +78,9 @@ void init_genrand64(UINT64 seed)
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */
 /* key_length is its length */
-void init_by_array64(UINT64 init_key[], UINT64 key_length)
+void init_by_array64(uint64_t init_key[], uint64_t key_length)
 {
-    UINT64 i, j, k;
+    uint64_t i, j, k;
     init_genrand64(19650218ULL);
     i=1; j=0;
     k = (NN>key_length ? NN : key_length);
@@ -101,11 +102,11 @@ void init_by_array64(UINT64 init_key[], UINT64 key_length)
 }
 
 /* generates a random number on [0, 2^64-1]-interval */
-UINT64 genrand64_int64(void)
+uint64_t genrand64_int64(void)
 {
     int i;
-    UINT64 x;
-    static UINT64 mag01[2]={0ULL, MATRIX_A};
+    uint64_t x;
+    static uint64_t mag01[2]={0ULL, MATRIX_A};
 
     if (mti >= NN) { /* generate NN words at one time */
 
@@ -139,9 +140,9 @@ UINT64 genrand64_int64(void)
 }
 
 /* generates a random number on [0, 2^63-1]-interval */
-long long genrand64_int63(void)
+int64_t genrand64_int63(void)
 {
-    return (long long)(genrand64_int64() >> 1);
+    return (int64_t)(genrand64_int64() >> 1);
 }
 
 /* generates a random number on [0,1]-real-interval */

@@ -46,13 +46,13 @@ class prxObject
     prxObject(const objWithData& b) : a(b) {};
 public:
     prxRecord operator [] (int index);
-    INT64 operator = (const INT64& value);
+    int64_t operator = (const int64_t& value);
     int operator = (const int& value);
     string operator = (const string& value);
-    real operator = (const real& value);
-    operator INT64();
+    long double operator = (const long double& value);
+    operator int64_t();
     operator int();
-    operator real();
+    operator long double();
     operator string();
     void print();
     void autoGen();
@@ -68,8 +68,8 @@ public:
     ~testInfo();
     char* loadFormatFile(const string& fileName);
     void paramsToVars();
-    INT64 getIntParam(const string& name);
-    real getFloatParam(const string& name);
+    int64_t getIntParam(const string& name);
+    long double getFloatParam(const string& name);
     prxObject operator [](const string& name);
     void print();
     void autoGen();

@@ -4,9 +4,12 @@
 //    exception handling
 //    speedUp, FE, expressions cache
 
+#include <cstdlib>
+#include <cstring>
+// Header <cstdint> requires C++0x, so use it's old name.
+#include <stdint.h>
+
 #include "easygen.h"
-#include "stdlib.h"
-#include "string.h"
 
 using namespace std;
 
@@ -110,20 +113,20 @@ testInfo::~testInfo()
     free(buf);
 }
 
-INT64 testInfo::getIntParam(const string& name)
+int64_t testInfo::getIntParam(const string& name)
 {
     string tmp = params[name];
     if (tmp.length() > getMaxIntLen()) throw genError("too long integer in command line");
-    istringstream ss(tmp); INT64 res;
+    istringstream ss(tmp); int64_t res;
     ss >> res;
     if (ss.fail()) throw genError("trying to get int param from non-int param");
     return res;
 }
 
-real testInfo::getFloatParam(const string& name)
+long double testInfo::getFloatParam(const string& name)
 {
     string tmp = params[name];
-    istringstream ss(tmp); real res;
+    istringstream ss(tmp); long double res;
     ss >> res;
     if (ss.fail()) throw genError("trying to get float param from non-float param");
     return res;
@@ -202,7 +205,7 @@ prxRecord prxObject::operator [] (int index)
     return prxRecord(tmp);
 }
 
-INT64 prxObject::operator = (const INT64& value)
+int64_t prxObject::operator = (const int64_t& value)
 {
     if (a.objPart->objKind != oInteger)
         throw genError("trying to assign integer to non-int object");
@@ -213,10 +216,10 @@ INT64 prxObject::operator = (const INT64& value)
 
 int prxObject::operator = (const int& value)
 {
-    return *this = (INT64)value;
+    return *this = (int64_t)value;
 }
 
-real prxObject::operator = (const real& value)
+long double prxObject::operator = (const long double& value)
 {
     if (a.objPart->objKind != oFloat)
         throw genError("trying to assign float to non-float object");
@@ -234,25 +237,25 @@ string prxObject::operator = (const string& value)
     return value;
 }
 
-prxObject::operator INT64()
+prxObject::operator int64_t()
 {
     if (a.objPart->objKind != oInteger)
         throw genError("trying to get integer from non-int object");
-    INT64 res = getIntValue(a);
+    int64_t res = getIntValue(a);
     genError::processParseError();
     return res;
 }
 
 prxObject::operator int()
 {
-    return (int)(INT64)(*this);
+    return (int)(int64_t)(*this);
 }
 
-prxObject::operator real()
+prxObject::operator long double()
 {
     if (a.objPart->objKind != oFloat)
         throw genError("trying to get float from non-float object");
-    real res = getFloatValue(a);
+    long double res = getFloatValue(a);
     genError::processParseError();
     return res;
 }

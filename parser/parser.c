@@ -3,10 +3,11 @@
 //TODO:
 //    more precise line and pos in error generation
 
+#include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #include "parser.h"
 #include "random.h"
@@ -91,7 +92,7 @@ static const char* errorList[errorCodesNumber + 1] = {
 struct token
 {
     int type;
-    INT64 value;
+    int64_t value;
     size_t line, pos;
     char* str;
 };
@@ -879,7 +880,7 @@ struct recWithData mallocRecord(struct recWithData info, int isRoot)
     return info;
 }
 
-static void getIntLR(struct objWithData info, INT64* l, INT64* r)
+static void getIntLR(struct objWithData info, int64_t* l, int64_t* r)
 {
     *l = evaluate(info.objPart->attrList[aRange].exVal1, info);
     if (info.objPart->attrList[aRange].exVal2)
@@ -887,23 +888,23 @@ static void getIntLR(struct objWithData info, INT64* l, INT64* r)
     else *r = *l;
 }
 
-INT64 getFloatDig(struct objWithData info)
+int64_t getFloatDig(struct objWithData info)
 {
     return evaluate(info.objPart->attrList[aDigits].exVal1, info);
 }
 
-INT64 getIntValue(struct objWithData info)
+int64_t getIntValue(struct objWithData info)
 {
     if (info.objPart->objKind != oInteger) {genParseError(31); return 0;}
     if (!info.pointerToData->value) {genParseError(30); return 0;}
-    return *((INT64*)info.pointerToData->value);
+    return *((int64_t*)info.pointerToData->value);
 }
 
-real getFloatValue(struct objWithData info)
+long double getFloatValue(struct objWithData info)
 {
     if (info.objPart->objKind != oFloat) {genParseError(31); return 0;}
     if (!info.pointerToData->value) {genParseError(30); return 0;}
-    return *((real*)info.pointerToData->value);
+    return *((long double*)info.pointerToData->value);
 }
 
 char* getStrValue(struct objWithData info)
@@ -913,9 +914,9 @@ char* getStrValue(struct objWithData info)
     return (char*)(info.pointerToData->value);
 }
 
-void setIntValue(struct objWithData info, const INT64 value)
+void setIntValue(struct objWithData info, const int64_t value)
 {
-    INT64 l, r;
+    int64_t l, r;
     if (info.objPart->objKind != oInteger) {genParseError(28); return;}
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
@@ -925,17 +926,17 @@ void setIntValue(struct objWithData info, const INT64 value)
     } else genParseError(27);
 }
 
-void setFloatValue(struct objWithData info, const real value)
+void setFloatValue(struct objWithData info, const long double value)
 {
-    INT64 l, r;
-    real tmp;
+    int64_t l, r;
+    long double tmp;
     int i, d;
     if (info.objPart->objKind != oFloat) {genParseError(40); return;}
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r); // it just takes "range" attribute
         d = (int)evaluate(info.objPart->attrList[aDigits].exVal1, info);
         if (value < l || value > r) {genParseError(29); return;}
-        if (d < 0 || d > maxFloatDigits) {genParseError(39); return;}
+        if (d < 0 || d > LDBL_DIG) {genParseError(39); return;}
         /*tmp = fabsl(value) - floorl(fabsl(value));
         for (i = 0; i < d; i++) {
             tmp = tmp*10; tmp = tmp - floorl(tmp);
@@ -949,7 +950,7 @@ void setFloatValue(struct objWithData info, const real value)
 void setStrValue(struct objWithData info, const char* value)
 {
     size_t i, n;
-    INT64 l, r;
+    int64_t l, r;
     if (info.objPart->objKind != oString) {genParseError(36); return;}
     if (!info.pointerToData->value) {
         n = strlen(value);
@@ -972,7 +973,7 @@ void setStrValue(struct objWithData info, const char* value)
 
 void autoGenInt(struct objWithData info)
 {
-    INT64 l, r, tmp;
+    int64_t l, r, tmp;
     if (info.objPart->objKind != oInteger) {genParseError(28); return;}
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
@@ -985,8 +986,8 @@ void autoGenInt(struct objWithData info)
 
 void autoGenFloat(struct objWithData info)
 {
-    INT64 l, r, d;
-    real tmp;
+    int64_t l, r, d;
+    long double tmp;
     if (info.objPart->objKind != oFloat) {genParseError(28); return;}
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
@@ -1000,7 +1001,7 @@ void autoGenFloat(struct objWithData info)
 
 void autoGenStr(struct objWithData info)
 {
-    INT64 l, r, tmp;
+    int64_t l, r, tmp;
     size_t i;
     char* res;
     if (info.objPart->objKind != oString) {genParseError(36); return;}
@@ -1064,10 +1065,10 @@ void autoGenRecord(struct recWithData info)
     }
 }
 
-INT64 evaluate(struct expr* e, struct objWithData info)
+int64_t evaluate(struct expr* e, struct objWithData info)
 {
-    INT64 res;
-    INT64 i, val1, val2;
+    int64_t res;
+    int64_t i, val1, val2;
     struct recWithData rnd;
     struct objWithData tmp;
     if (e->op1) {

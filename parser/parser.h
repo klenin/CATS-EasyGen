@@ -9,7 +9,7 @@ enum objKind {oNewLine, oSoftLine, oInteger, oFloat, oString, oSeq, oEnd};
 struct expr
 {
     char opCode;
-    INT64 intConst;
+    int64_t intConst;
     char* varName;
     struct expr *op1,*op2;
 };
@@ -97,15 +97,15 @@ size_t getErrLine(struct parseError* a);
 size_t getErrPos(struct parseError* a);
 
 struct recWithData mallocRecord(struct recWithData info, int isRoot);
-INT64 evaluate(struct expr* e, struct objWithData info);
+int64_t evaluate(struct expr* e, struct objWithData info);
 
-INT64 getFloatDig(struct objWithData info);
-INT64 getIntValue(struct objWithData info);
-real getFloatValue(struct objWithData info);
+int64_t getFloatDig(struct objWithData info);
+int64_t getIntValue(struct objWithData info);
+long double getFloatValue(struct objWithData info);
 char* getStrValue(struct objWithData info); // just a pointer, no copy
 
-void setIntValue(struct objWithData info, const INT64 value);
-void setFloatValue(struct objWithData info, const real value);
+void setIntValue(struct objWithData info, const int64_t value);
+void setFloatValue(struct objWithData info, const long double value);
 void setStrValue(struct objWithData info, const char* value); // copy value
 
 struct recWithData byIndex(struct objWithData info, int index);

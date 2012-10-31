@@ -1,30 +1,31 @@
+#include "numerics.h"
 #include "random.h"
 #include "mt19937-64.h"
 
-void setRandSeed(INT64 randseed)
+void setRandSeed(int64_t randseed)
 {
     init_genrand64(randseed);
 }
 
-static UINT64 nextRand()
+static uint64_t nextRand()
 {
     return genrand64_int64();
 }
 
-INT64 genRandInt(INT64 l, INT64 r)
+int64_t genRandInt(int64_t l, int64_t r)
 {
-    UINT64 mod = (UINT64)(r - l) + 1;
+    uint64_t mod = (uint64_t)(r - l) + 1;
     return l + (nextRand() % mod);
 }
 
-real genRandFloat(INT64 l, INT64 r, int d)
+long double genRandFloat(int64_t l, int64_t r, int d)
 {
-    real d10, x;
-    UINT64 len, tmp;
-    INT64 tmp1;
+    long double d10, x;
+    uint64_t len, tmp;
+    int64_t tmp1;
     int i, k;
 
-    if (r <= l) return (real)l;
+    if (r <= l) return (long double)l;
     len = r-l+1;
     if (!len) len--;
 
@@ -34,6 +35,6 @@ real genRandFloat(INT64 l, INT64 r, int d)
 
     for (i = 1, d10 = 1; i <= d; i++) d10 *= 10;
     tmp1 = genRandInt(l*d10, r*d10);
-    x = tmp1 / (real)d10;
+    x = tmp1 / (long double)d10;
     return x;
 }
