@@ -3,6 +3,7 @@
 //TODO:
 //    more precise line and pos in error generation
 
+#include <ctype.h>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -256,16 +257,6 @@ int getAttrCount(int objKind)
     return res;
 }
 
-static int isAlfa(char ch)
-{
-    return ('a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z');
-}
-
-static int isDigit(char ch)
-{
-    return ('0' <= ch && ch <= '9');
-}
-
 int isInCharSet(char ch, char* desc)
 {
     int inv,i,j,lastChar,curChar,range,t,screen;
@@ -282,9 +273,9 @@ int isInCharSet(char ch, char* desc)
             if (i >= (int)n-2) return -1;
             if (desc[i+1] == '-' || desc[i+1] == '}' || desc[i+1] == '\\') {
                 curChar = desc[i+1]; i += 2;
-            } else if (isDigit(desc[i+1])) {
+            } else if (isdigit(desc[i+1])) {
                 j = 1; curChar = 0;
-                while (i+j < (int)n-1 && isDigit(desc[i+j]) &&
+                while (i+j < (int)n-1 && isdigit(desc[i+j]) &&
                     curChar*10+desc[i+j]-'0' < charNumber) {
                         curChar = curChar*10 + desc[i+j] - '0';
                         j++;
@@ -423,10 +414,10 @@ static void moveToNextToken()
                 if (0 <= ch && ch <= ' ') {
                     if (moveToNextChar()) return;
                     oldPos = bufPos;
-                } else if (isAlfa(ch) || ch == '_') {
+                } else if (isalpha(ch) || ch == '_') {
                     moveToNextChar(); state = 1;
                 }
-                else if (isDigit(ch)) state = 3;
+                else if (isdigit(ch)) state = 3;
                 else if (ch == '{') state = 4;
                 else if (ch == '!') state = 5;
                 else state = 2;
@@ -434,7 +425,7 @@ static void moveToNextToken()
 
             case 1:
                 fin = 0;
-                if (isAlfa(ch) || ch == '_' || isDigit(ch)) {
+                if (isalpha(ch) || ch == '_' || isdigit(ch)) {
                     if (moveToNextChar()) fin = 1;
                 } else fin = 1;
                 if (fin) {
@@ -470,7 +461,7 @@ static void moveToNextToken()
                 break;
             case 3:
                 fin = 0;
-                if (isDigit(ch)) {
+                if (isdigit(ch)) {
                     if (moveToNextChar()) fin = 1;
                 } else fin = 1;
                 if (fin) {
@@ -502,7 +493,7 @@ static void moveToNextToken()
             case 6:
                 if (moveToNextChar()) {genParseError(3); return;} //"'{' expected"
                 ch1 = buf[bufPos];
-                if (ch1 == '\\' || ch1 == '-' || ch1 == '}' || isDigit(ch1))
+                if (ch1 == '\\' || ch1 == '-' || ch1 == '}' || isdigit(ch1))
                     state = 4;
                 else  {genParseError(5); return;} //"unexpected char after '\\'"
                 break;
