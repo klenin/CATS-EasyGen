@@ -1,5 +1,5 @@
-include_directories(${PROJECT_SOURCE_DIR}/parser)
-include_directories(${PROJECT_SOURCE_DIR}/generator)
+include_directories(${PROJECT_SOURCE_DIR}/src/parser)
+include_directories(${PROJECT_SOURCE_DIR}/src/generator)
 
 link_directories(${PROJECT_BINARY_DIR}/generator)
 

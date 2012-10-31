@@ -1,4 +1,4 @@
-include_directories(${PROJECT_SOURCE_DIR}/parser)
+include_directories(${PROJECT_SOURCE_DIR}/src/parser)
 
 add_library(generator STATIC easygen.cpp)
 
