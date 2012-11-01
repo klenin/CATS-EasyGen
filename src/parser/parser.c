@@ -16,10 +16,10 @@
 
 #include "parser.h"
 #include "random.h"
+#include "error.h"
 
 #define charNumber 256
 #define tmpBufSize 10240
-#define errorCodesNumber 40
 
 #define objCount 7
 #define allAttrCount 6
@@ -49,50 +49,6 @@ enum tokenType {ttDelim, ttObject, ttAttrName, ttIdentifier,
 /* Delimeters list is useless while all of it have length == 1.
 enum delimeters {dlSemi, dlComma, dlEq, dlOpenR, dlCloseR, dlOpenSq,
     dlCLoseSq, dlPlus, dlMinus, dlMul, dlDiv, dlDegree};*/
-
-static const char* errorList[errorCodesNumber + 1] = {
-/*00*/    "",
-/*01*/    "unknown token",
-/*02*/    "too long integer constant",
-/*03*/    "'}' expected",
-/*04*/    "'{' expected",
-/*05*/    "unexpected char after '\\'",
-/*06*/    "tokenizer bug: unknown state",
-/*07*/    "unexpected token",
-/*08*/    "')' expected",
-/*09*/    "operand expected",
-/*10*/    "expression parser bug: ^ not expected",
-/*11*/    "unknown attribute name",
-/*12*/    "invalid charset",
-/*13*/    "bug in array attrTypeByKind",
-/*14*/    "this attribute is already defined",
-/*15*/    "attibute is invalid for this object kind",
-/*16*/    "invalid attibute list",
-/*17*/    "object kind expected",
-/*18*/    "end unexpected",
-/*19*/    "object with this name already exists",
-/*20*/    "no object with such name",
-/*21*/    "integer object expected",
-/*22*/    "end expected",
-/*23*/    "trying to divide by zero",
-/*24*/    "parser bug: unknown arithmetic operation",
-/*25*/    "parser bug: unknown identifier",
-/*26*/    "invalid sequence index",
-/*27*/    "assinging object with already defined value",
-/*28*/    "assinging int for non-int object",
-/*29*/    "assinging number not in range",
-/*30*/    "geting value from not defined object",
-/*31*/    "geting value from not that type object",
-/*32*/    "running seq autogen for non-seq object",
-/*33*/    "getSeqLength is called fot non-seq object",
-/*34*/    "data management bug",
-/*35*/    "genRandInt called with illegal params",
-/*36*/    "assinging string for non-string object",
-/*37*/    "assigning string with invalid chars",
-/*38*/    "assigning string of invalid length",
-/*39*/    "invalid nubmer of digits after decimal point"
-/*40*/    "assinging float for non-float object",
-}; // error codes should start with 1
 
 struct token
 {
@@ -312,8 +268,15 @@ int isInCharSet(char ch, char* desc)
 
 const char* errorMessageByCode(int errCode)
 {
-    if (errCode < 1 || errCode > errorCodesNumber) return 0;
-    else return errorList[errCode];
+    if (errCode >= E_ERROR_RANGE_START && errCode < E_NUMBER_OF_ERROR_TYPES) {
+        int i;
+        for (i = E_ERROR_RANGE_START; i < E_NUMBER_OF_ERROR_TYPES; ++i) {
+            if (errorMessages[i].code == errCode) {
+                return errorMessages[i].message;
+            }
+        }
+    }
+    return NULL;
 }
 
 struct parseError* getLastError()
@@ -461,7 +424,10 @@ static void moveToNextToken()
                     curToken = newToken(line1, pos1, oldPos, bufPos);
                     curToken->type = ttDelim; curToken->value = i;
                     return;
-                } else {genParseError(1)/*"unknown token"*/; return;}
+                } else {
+                    genParseError(E_UNKNOWN_TOKEN);
+                    return;
+                }
                 break;
             case 3:
                 fin = 0;
@@ -471,15 +437,21 @@ static void moveToNextToken()
                 if (fin) {
                     curToken = newToken(line1,pos1,oldPos,bufPos);
                     curToken->type = ttInteger; curToken->value = 0;
-                    if (bufPos - oldPos > maxIntLen) {genParseError(2); return;}
-                    //"too long integer constant"
-                    for (sc = oldPos; sc < bufPos; sc++)
+                    if (bufPos - oldPos > maxIntLen) {
+                        genParseError(E_TOO_LONG_INTEGER);
+                        return;
+                    }
+                    for (sc = oldPos; sc < bufPos; sc++) {
                         curToken->value = curToken->value*10 + buf[sc] - '0';
+                    }
                     return;
                 }
                 break;
             case 4:
-                if (moveToNextChar()) {genParseError(3); return;} //"'}' expected"
+                if (moveToNextChar()) {
+                    genParseError(E_RCB_EXPECTED);
+                    return;
+                }
                 if (buf[bufPos] == '\\') state = 6;
                 if (buf[bufPos] == '}') {
                     moveToNextChar();
@@ -490,19 +462,26 @@ static void moveToNextToken()
                 break;
             case 5:
                 if (moveToNextChar() || buf[bufPos] != '{') {
-                    genParseError(4); return; //"'{' expected"
+                    genParseError(E_LCB_EXPECTED);
+                    return;
                 }
                 state = 4;
                 break;
             case 6:
-                if (moveToNextChar()) {genParseError(3); return;} //"'{' expected"
+                if (moveToNextChar()) {
+                    genParseError(E_RCB_EXPECTED);
+                    return;
+                }
                 ch1 = buf[bufPos];
-                if (ch1 == '\\' || ch1 == '-' || ch1 == '}' || isdigit(ch1))
+                if (ch1 == '\\' || ch1 == '-' || ch1 == '}' || isdigit(ch1)) {
                     state = 4;
-                else  {genParseError(5); return;} //"unexpected char after '\\'"
+                } else {
+                    genParseError(E_UNEXPECTED_CHAR_AFTER_BACKSLASH);
+                    return;
+                }
                 break;
             default:
-                genParseError(6); //"tokenizer bug: unknown state"
+                genParseError(B_UNKNOWN_STATE);
                 return;
         }
     }
@@ -523,13 +502,14 @@ static int attrFind(char *name)
 
 static char* parseSingleToken(int tokenType)
 {
-    char* res;
-    if (!curToken || curToken->type != tokenType) {
-        genParseError(7); return 0; //"unexpected token"
+    char* res = NULL;
+    if (curToken && curToken->type == tokenType) {
+        res = (char*)malloc(strlen(curToken->str) + 1);
+        strcpy(res, curToken->str);
+        moveToNextToken();
+    } else {
+        genParseError(E_UNEXPECTED_TOKEN);
     }
-    res = (char*)malloc(strlen(curToken->str) + 1);
-    strcpy(res,curToken->str);
-    moveToNextToken();
     return res;
 }
 
@@ -560,11 +540,9 @@ static struct expr* parseExpression1(int priority, int isFirst,
 
                 tmp.pointerToData = 0; tmp.recPart = curSeq;
                 varObj = findObject(res->varName, tmp, 1).objPart;
-                if (!varObj) genParseError(20); //"no object with such name"
-                //"integer object expected"
-                if (!wasError() && varObj->objKind != oInteger) genParseError(21);
+                if (!varObj) genParseError(E_UNKNOWN_OBJECT);
+                if (!wasError() && varObj->objKind != oInteger) genParseError(E_INTEGER_OBJECT_EXPECTED);
                 if (wasError()) {exprDestructor(res); return 0;}
-
                 moveToNextToken();
                 if (wasError()) {exprDestructor(res); return 0;}
                 return res;
@@ -578,12 +556,14 @@ static struct expr* parseExpression1(int priority, int isFirst,
             case ttDelim:
                 if (curToken->value == '(') {
                     moveToNextToken();
-                    res = parseExpression1(1,1,curSeq);
+                    res = parseExpression1(1, 1, curSeq);
                     if (res && !chkCurToken(')')) {
-                        genParseError(8); //"')' expected"
-                        exprDestructor(res); return 0;
+                        genParseError(E_RB_EXPECTED);
+                        exprDestructor(res);
+                        return 0;
                     }
-                    moveToNextToken(); return res;
+                    moveToNextToken();
+                    return res;
                 }
                 // don't need "break" here
             default:
@@ -600,16 +580,18 @@ static struct expr* parseExpression1(int priority, int isFirst,
                     op->op1 = op->op2 = 0; op->opCode = 0; op->varName = 0;
                     op->intConst = 0;
             } else {
-                if (priority == getOpPriority('+')) genParseError(9);
-                //"operand expected"
+                if (priority == getOpPriority('+')) {
+                    genParseError(E_OPERAND_EXPECTED);
+                }
                 return 0;
             }
         }
 
         if (chkCurToken('^')) {
             if (priority < getOpPriority('^')) {
-                genParseError(10); //"expression parser bug: ^ not expected"
-                exprDestructor(op); return 0;
+                genParseError(B_UNEXPECTED_CAP);
+                exprDestructor(op);
+                return 0;
             }
             res = (struct expr*)malloc(sizeof(struct expr));
             res->op1 = op; res->opCode = '^';
@@ -678,8 +660,9 @@ static struct attr* parseAttr(struct objRecord* curSeq)
 
     i = attrFind(res->attrName);
     if (i < 0) {
-        genParseError(11); //"unknown attribute name"
-        attrDestructor(res); return 0;
+        genParseError(E_UNKNOWN_ATTRIBUTE);
+        attrDestructor(res);
+        return 0;
     }
 
     if (!curToken) return 0;
@@ -700,7 +683,7 @@ static struct attr* parseAttr(struct objRecord* curSeq)
             res->strVal = parseSingleToken(ttCharSet);
             if (!res->strVal) {attrDestructor(res); return 0;}
             if (isInCharSet(0, res->strVal) < 0) {
-                genParseError(12); //"invalid charset"
+                genParseError(E_INVALID_CHARSET);
                 attrDestructor(res); return 0;
             }
             res->charNum = 0;
@@ -715,7 +698,7 @@ static struct attr* parseAttr(struct objRecord* curSeq)
                 if (res->valid[j]) res->charSetStr[k++] = j;
             break;
         default:
-            genParseError(13); //"bug in array attrTypeByKind"
+            genParseError(B_ARRAY_ATTR_TYPE_BY_KIND);
             attrDestructor(res); return 0;
     }
     if (wasError()) {attrDestructor(res); return 0;}
@@ -735,12 +718,12 @@ static struct attr* parseAttrList(int objKind, struct objRecord* curSeq)
     while (curAttr = parseAttr(curSeq)) {
         i = attrFind(curAttr->attrName);
         if (vis[i]) {
-            genParseError(14); //"this attribute is already defined"
+            genParseError(E_ATTRIBUTE_ALREADY_DEFINED);
             attrDestructor(curAttr); curAttr = 0;
             bad = 1; break;
         }
         if (!attrByObj[objKind][i]) {
-            genParseError(15); //"attibute is invalid for this object kind"
+            genParseError(E_INVALID_ATTRIBUTE);
             attrDestructor(curAttr); curAttr = 0;
             bad = 1; break;
         }
@@ -757,7 +740,7 @@ static struct attr* parseAttrList(int objKind, struct objRecord* curSeq)
     if (n < getAttrCount(objKind)) bad = 1;
     if (bad) {
         attrListDestructor(res);
-        genParseError(16); //"invalid attibute list"
+        genParseError(E_INVALID_ATTRIBUTE_LIST);
         return 0;
     }
     if (!curToken || chkCurToken(';')) {
@@ -778,7 +761,7 @@ static struct obj* parseNextObject(struct objRecord* curSeq)
 
     if (!curToken) return 0;
     if (curToken->type != ttObject) {
-        genParseError(17); //"object kind expected"
+        genParseError(E_OBJECT_KIND_EXPECTED);
         return 0;
     }
     objKind = (int)curToken->value; moveToNextToken();
@@ -790,8 +773,8 @@ static struct obj* parseNextObject(struct objRecord* curSeq)
         if (name) { // if name doesn't exist, than it's unnamed objKind
             tmp.pointerToData = 0; tmp.recPart = curSeq;
             if (findObject(name, tmp, 0).objPart) {
+                genParseError(E_DUPLICATE_OBJECT);
                 attrListDestructor(attrList);
-                genParseError(19); //"object with this name already exists"
                 return 0;
             }
         }
@@ -810,7 +793,7 @@ static struct obj* parseNextObject(struct objRecord* curSeq)
             return res;
     }
 
-    genParseError(16); // "invalid attribute list"
+    genParseError(E_INVALID_ATTRIBUTE_LIST);
     return 0;
 }
 
@@ -825,8 +808,13 @@ static struct objRecord* parseObjRecord1(struct objRecord* parent)
 
     while (curObj = parseNextObject(res)) {
         if (curObj->objKind == oEnd) {
-            if (!parent) {genParseError(18); break;} //"end unexpected"
-            else {objDestructor(curObj); wasEnd = 1; break;}
+            if (!parent) {
+                genParseError(E_UNEXPECTED_END);
+            } else {
+                objDestructor(curObj);
+                wasEnd = 1;
+            }
+            break;
         }
         res->n++;
         tmp = (struct objRecord*)malloc(sizeof(struct objRecord));
@@ -846,7 +834,9 @@ static struct objRecord* parseObjRecord1(struct objRecord* parent)
         objDestructor(curObj);
     }
 
-    if (!wasEnd && parent) genParseError(22); //"end expected"
+    if (!wasEnd && parent) {
+        genParseError(E_END_EXPECTED);
+    }
 
     if (wasError()) {objRecordDestructor(res); return 0;}
     return res;
@@ -888,84 +878,118 @@ int64_t getFloatDig(struct objWithData info)
     return evaluate(info.objPart->attrList[aDigits].exVal1, info);
 }
 
+static int isObjectValid(struct objWithData* info, enum objKind expectedKind)
+{
+    if (info->objPart->objKind != expectedKind) {
+        genParseError(E_OBJECT_KIND_MISMATCH_GET);
+        return 0;
+    }
+    if (!info->pointerToData->value) {
+        genParseError(E_UNINITIALIZED_OBJECT);
+        return 0;
+    }
+    return !0;
+}
+
 int64_t getIntValue(struct objWithData info)
 {
-    if (info.objPart->objKind != oInteger) {genParseError(31); return 0;}
-    if (!info.pointerToData->value) {genParseError(30); return 0;}
-    return *((int64_t*)info.pointerToData->value);
+    if (isObjectValid(&info, oInteger)) {
+        return *((int64_t*)info.pointerToData->value);
+    }
+    return 0;
 }
 
 long double getFloatValue(struct objWithData info)
 {
-    if (info.objPart->objKind != oFloat) {genParseError(31); return 0;}
-    if (!info.pointerToData->value) {genParseError(30); return 0;}
-    return *((long double*)info.pointerToData->value);
+    if (isObjectValid(&info, oFloat)) {
+        return *((long double*)info.pointerToData->value);
+    }
+    return 0;
 }
 
 char* getStrValue(struct objWithData info)
 {
-    if (info.objPart->objKind != oString) {genParseError(31); return 0;}
-    if (!info.pointerToData->value) {genParseError(30); return 0;}
-    return (char*)(info.pointerToData->value);
+    if (isObjectValid(&info, oString)) {
+        return (char*)(info.pointerToData->value);
+    }
+    return NULL;
 }
 
 void setIntValue(struct objWithData info, const int64_t value)
 {
-    int64_t l, r;
-    if (info.objPart->objKind != oInteger) {genParseError(28); return;}
+    if (info.objPart->objKind != oInteger) {
+        genParseError(E_ASSIGN_NON_INT);
+        return;
+    }
     if (!info.pointerToData->value) {
+        int64_t l, r;
         getIntLR(info, &l, &r);
-        if (value < l || value > r) {genParseError(29); return;}
-        info.pointerToData->value = malloc(sizeof(value));
-        memcpy(info.pointerToData->value, &value, sizeof(value));
-    } else genParseError(27);
+        if (value < l || value > r) {
+            genParseError(E_OUT_OF_RANGE);
+        } else {
+            info.pointerToData->value = malloc(sizeof(value));
+            memcpy(info.pointerToData->value, &value, sizeof(value));
+        }
+    } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
 
 void setFloatValue(struct objWithData info, const long double value)
 {
-    if (info.objPart->objKind != oFloat) {genParseError(40); return;}
+    if (info.objPart->objKind != oFloat) {
+        genParseError(E_ASSIGN_NON_FLOAT);
+        return;
+    }
     if (!info.pointerToData->value) {
-        int d;
-        int64_t l, r;
+        int64_t l, r, d;
         getIntLR(info, &l, &r); // it just takes "range" attribute
-        d = (int)evaluate(info.objPart->attrList[aDigits].exVal1, info);
-        if (value < l || value > r) {genParseError(29); return;}
-        if (d < 0 || d > LDBL_DIG) {genParseError(39); return;}
-        /*tmp = fabsl(value) - floorl(fabsl(value));
-        for (i = 0; i < d; i++) {
-            tmp = tmp*10; tmp = tmp - floorl(tmp);
+        if (value < l || value > r) {
+            genParseError(E_OUT_OF_RANGE);
+            return;
         }
-        if (fabsl(tmp) > eps) {genParseError(39); return;}*/
+        d = evaluate(info.objPart->attrList[aDigits].exVal1, info);
+        if (d < 0 || d > LDBL_DIG) {
+            genParseError(E_INVALID_FRACTIONAL_PART);
+            return;
+        }
         info.pointerToData->value = malloc(sizeof(value));
         memcpy(info.pointerToData->value, &value, sizeof(value));
-    } else genParseError(27);
+    } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
 
 void setStrValue(struct objWithData info, const char* value)
 {
     size_t i, n;
     int64_t l, r;
-    if (info.objPart->objKind != oString) {genParseError(36); return;}
+    if (info.objPart->objKind != oString) {
+        genParseError(E_ASSIGN_NON_STRING);
+        return;
+    }
     if (!info.pointerToData->value) {
         n = strlen(value);
         getIntLR(info, &l, &r);
         if (wasError()) return;
         if (n < l || n > r) {
-            genParseError(38); return;
+            genParseError(E_INVALID_STRING_LENGTH);
+            return;
         }
-        for (i = 0; i < n; i++)
+        for (i = 0; i < n; i++) {
             if (!info.objPart->attrList[aChars].valid[value[i]]) {
-                genParseError(37); return;
+                genParseError(E_INVALID_CHARS);
+                return;
             }
+        }
         info.pointerToData->value = malloc(n + 1);
         memcpy(info.pointerToData->value, value, n + 1);
-    } else genParseError(27);
+    } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
 
 void autoGenInt(struct objWithData info)
 {
     int64_t l, r, tmp;
-    if (info.objPart->objKind != oInteger) {genParseError(28); return;}
+    if (info.objPart->objKind != oInteger) {
+        genParseError(E_GENERATE_NON_INT);
+        return;
+    }
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
         if (wasError()) return;
@@ -979,7 +1003,10 @@ void autoGenFloat(struct objWithData info)
 {
     int64_t l, r, d;
     long double tmp;
-    if (info.objPart->objKind != oFloat) {genParseError(28); return;}
+    if (info.objPart->objKind != oFloat) {
+        genParseError(E_GENERATE_NON_FLOAT);
+        return;
+    }
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
         d = evaluate(info.objPart->attrList[aDigits].exVal1, info);
@@ -995,7 +1022,10 @@ void autoGenStr(struct objWithData info)
     int64_t l, r, tmp;
     size_t i;
     char* res;
-    if (info.objPart->objKind != oString) {genParseError(36); return;}
+    if (info.objPart->objKind != oString) {
+        genParseError(E_GENERATE_NON_STRING);
+        return;
+    }
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
         if (wasError()) return;
@@ -1012,7 +1042,7 @@ void autoGenStr(struct objWithData info)
 
 int getSeqLen(struct objWithData info)
 {
-    if (info.objPart->objKind != oSeq) genParseError(33);
+    if (info.objPart->objKind != oSeq) genParseError(E_NOT_A_SEQUENCE);
     return evaluate(info.objPart->attrList[aLength].exVal1, info);
 }
 
@@ -1022,7 +1052,10 @@ void autoGenSeq(struct objWithData info)
     int i, n;
     n = evaluate(info.objPart->attrList[aLength].exVal1, info);
     if (wasError()) return;
-    if (info.objPart->objKind != oSeq) {genParseError(32); return;}
+    if (info.objPart->objKind != oSeq) {
+        genParseError(E_GENERATE_NON_SEQUENCE);
+        return;
+    }
     byIndex(info, n);
     for (i = 0; i < n; i++) {
         rnd.pointerToData = &(((struct recordData*)(info.pointerToData->value))[i]);
@@ -1066,20 +1099,22 @@ int64_t evaluate(struct expr* e, struct objWithData info)
             case '-': res = val1 - val2; break;
             case '*': res = val1 * val2; break;
             case '/':
-                if (!val2) genParseError(23);
+                if (val2 == 0) {
+                    genParseError(E_ZERO_DIVISION);
+                }
                 res = val1 / val2; break;
             case '^':
                 res = 1;
                 for (i = 1; i <= val2; i++) res *= val1;
                 break;
             default:
-                genParseError(24);
+                genParseError(B_UNKNOWN_OPERATION);
         }
     } else if (e->varName) {
         rnd.pointerToData = info.pointerToData->parentData;
         rnd.recPart = info.objPart->parent;
         tmp = findObject(e->varName, rnd, 1);
-        if (!tmp.objPart) genParseError(25);
+        if (!tmp.objPart) genParseError(B_UNKNOWN_IDENTIFIER);
         res = getIntValue(tmp);
     } else res = e->intConst;
     return res;
@@ -1087,9 +1122,6 @@ int64_t evaluate(struct expr* e, struct objWithData info)
 
 struct objWithData byName(struct recWithData info, const char* name)
 {
-    struct recordData* data = info.pointerToData;
-    struct objRecord* a = info.recPart;
-//    if (!data) genParseError(34);
     return findObject(name, info, 0);
 }
 
@@ -1103,7 +1135,10 @@ struct recWithData byIndex(struct objWithData info, int index)
     int i;
     res.pointerToData = 0; res.recPart = 0;
     if (wasError()) return res;
-    if (index < 1 || index > n) {genParseError(26); return res;}
+    if (index < 1 || index > n) {
+        genParseError(E_INVALID_INDEX);
+        return res;
+    }
     if (!data->value) {
         data->value = malloc(n * sizeof(struct recordData));
         d = (struct recordData*)(data->value);
@@ -1124,7 +1159,10 @@ void destroySeqData(struct objWithData info)
 {
     struct recWithData rnd;
     int i, n;
-    if (info.objPart->objKind != oSeq) {genParseError(32); return;}
+    if (info.objPart->objKind != oSeq) {
+        genParseError(E_DESTROY_NON_SEQUENCE);
+        return;
+    }
     n = (int)evaluate(info.objPart->attrList[aLength].exVal1, info);
     if (wasError()) return;
     if (!info.pointerToData || !info.pointerToData->value) return;
