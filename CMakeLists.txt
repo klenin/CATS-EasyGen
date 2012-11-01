@@ -6,21 +6,22 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
-set(GCC_FLAGS -W -Wall -pedantic -Wextra -Weffc++ -Winit-self
-              -Woverloaded-virtual -Wnon-virtual-dtor
-              -Wold-style-cast -Wconversion -Wsign-conversion
-)
+set(GCC_COMMON_FLAGS -W -Wall -pedantic -Wextra -Winit-self)
+set(GCC_CFLAGS -std=c99)
+set(GCC_CXXFLAGS -Weffc++ -Woverloaded-virtual -Wnon-virtual-dtor -Wold-style-cast)
 set(VC_FLAGS /analyze /W3)
 
-if(CMAKE_COMPILER_IS_GNUCC)
-    set(ADDITIONAL_CXX_FLAGS ${GCC_FLAGS})
-elseif(MSVC)
-    set(ADDITIONAL_CXX_FLAGS ${VC_FLAGS})
-endif(CMAKE_COMPILER_IS_GNUCC)
-
-foreach(flag ${ADDITIONAL_CXX_FLAGS})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-endforeach(flag)
+if(MSVC)
+    add_definitions(${VC_FLAGS})
+elseif(CMAKE_COMPILER_IS_GNUCC)
+    add_definitions(${GCC_COMMON_FLAGS})
+    foreach(flag ${GCC_CFLAGS})
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
+    endforeach()
+    foreach(flag ${GCC_CXXFLAGS})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+    endforeach()
+endif()
 
 add_subdirectory(src/parser)
 add_subdirectory(src/generator)
