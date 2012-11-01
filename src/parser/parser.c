@@ -948,10 +948,7 @@ void setStrValue(struct objWithData info, const char* value)
     if (info.objPart->objKind != oString) {genParseError(36); return;}
     if (!info.pointerToData->value) {
         n = strlen(value);
-        l = evaluate(info.objPart->attrList[aLenRange].exVal1, info);
-        if (info.objPart->attrList[aLenRange].exVal2)
-            evaluate(info.objPart->attrList[aLenRange].exVal2, info);
-        else r = l;
+        getIntLR(info, &l, &r);
         if (wasError()) return;
         if (n < l || n > r) {
             genParseError(38); return;
@@ -1000,10 +997,7 @@ void autoGenStr(struct objWithData info)
     char* res;
     if (info.objPart->objKind != oString) {genParseError(36); return;}
     if (!info.pointerToData->value) {
-        l = evaluate(info.objPart->attrList[aLenRange].exVal1, info);
-        if (info.objPart->attrList[aLenRange].exVal2)
-            evaluate(info.objPart->attrList[aLenRange].exVal2, info);
-        else r = l;
+        getIntLR(info, &l, &r);
         if (wasError()) return;
         tmp = genRandInt(l, r);
         res = (char*)malloc(tmp+1);
