@@ -3,6 +3,10 @@
 //TODO:
 //    more precise line and pos in error generation
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <ctype.h>
 #include <float.h>
 #include <math.h>
@@ -919,11 +923,10 @@ void setIntValue(struct objWithData info, const int64_t value)
 
 void setFloatValue(struct objWithData info, const long double value)
 {
-    int64_t l, r;
-    long double tmp;
-    int i, d;
     if (info.objPart->objKind != oFloat) {genParseError(40); return;}
     if (!info.pointerToData->value) {
+        int d;
+        int64_t l, r;
         getIntLR(info, &l, &r); // it just takes "range" attribute
         d = (int)evaluate(info.objPart->attrList[aDigits].exVal1, info);
         if (value < l || value > r) {genParseError(29); return;}

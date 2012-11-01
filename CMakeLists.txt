@@ -10,12 +10,17 @@ set(GCC_FLAGS -W -Wall -pedantic -Wextra -Weffc++ -Winit-self
               -Woverloaded-virtual -Wnon-virtual-dtor
               -Wold-style-cast -Wconversion -Wsign-conversion
 )
+set(VC_FLAGS /analyze /W3)
 
 if(CMAKE_COMPILER_IS_GNUCC)
-    foreach(flag ${GCC_FLAGS})
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-    endforeach(flag)
+    set(ADDITIONAL_CXX_FLAGS ${GCC_FLAGS})
+elseif(MSVC)
+    set(ADDITIONAL_CXX_FLAGS ${VC_FLAGS})
 endif(CMAKE_COMPILER_IS_GNUCC)
+
+foreach(flag ${ADDITIONAL_CXX_FLAGS})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+endforeach(flag)
 
 add_subdirectory(src/parser)
 add_subdirectory(src/generator)

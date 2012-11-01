@@ -4,6 +4,11 @@
 //    exception handling
 //    speedUp, FE, expressions cache
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <cctype>
 #include <cstdlib>
 #include <cstring>
 // Header <cstdint> requires C++0x, so use it's old name.
