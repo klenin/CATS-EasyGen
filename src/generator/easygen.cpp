@@ -48,7 +48,7 @@ char* testInfo::loadFormatFile(const string& fileName)
         if (!f) break;
         res += tmp;
     }
-    char* res1 = (char*)malloc(res.length() + 1);
+    char* res1 = static_cast<char*>(malloc(res.length() + 1));
     strcpy(res1, res.c_str());
     return res1;
 }
@@ -253,7 +253,7 @@ prxObject::operator int64_t()
 
 prxObject::operator int()
 {
-    return (int)(int64_t)(*this);
+    return static_cast<int>(static_cast<int64_t>(*this));
 }
 
 prxObject::operator long double()

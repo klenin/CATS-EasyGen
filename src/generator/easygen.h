@@ -31,8 +31,8 @@ class prxRecord
     friend class testInfo;
     friend class prxObject;
     recWithData a;
-    prxRecord() {a.recPart = 0; a.pointerToData = 0;}
-    prxRecord(const recWithData& b) : a(b) {};
+    prxRecord() : a() { a.recPart = NULL; a.pointerToData = NULL; }
+    prxRecord(const recWithData& b) : a(b) {}
 public:
     prxObject operator [] (const string& name);
     void print();
@@ -43,7 +43,7 @@ class prxObject
 {
     friend class prxRecord;
     objWithData a;
-    prxObject(const objWithData& b) : a(b) {};
+    prxObject(const objWithData& b) : a(b) {}
 public:
     prxRecord operator [] (int index);
     int64_t operator = (const int64_t& value);

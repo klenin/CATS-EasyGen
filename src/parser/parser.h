@@ -26,7 +26,7 @@ struct attr
 
 struct obj
 {
-    int objKind;
+    unsigned int objKind;
     struct attr* attrList;
     struct objRecord *rec, *parent;
     //size_t parentNumber;

@@ -708,14 +708,16 @@ static struct attr* parseAttr(struct objRecord* curSeq)
 static struct attr* parseAttrList(int objKind, struct objRecord* curSeq)
 {
     //it should eat semicolons too
-    struct attr *res = 0, *curAttr;
+    struct attr *res = 0;
+    struct attr *curAttr;
     int bad = 0, i, n = 0;
-    int vis[allAttrCount]; memset(vis,0,sizeof(vis));
+    int vis[allAttrCount];
 
-    res = (struct attr*)malloc(allAttrCount * sizeof(struct attr));
+    res = (struct attr*)calloc(allAttrCount, sizeof(struct attr));
     memset(res, 0, allAttrCount * sizeof(struct attr));
+    memset(vis, 0, sizeof(vis));
 
-    while (curAttr = parseAttr(curSeq)) {
+    while ((curAttr = parseAttr(curSeq))) {
         i = attrFind(curAttr->attrName);
         if (vis[i]) {
             genParseError(E_ATTRIBUTE_ALREADY_DEFINED);
@@ -806,7 +808,7 @@ static struct objRecord* parseObjRecord1(struct objRecord* parent)
     res = (struct objRecord*)malloc(sizeof(struct objRecord));
     res->n = 0; res->seq = 0; res->parent = parent;
 
-    while (curObj = parseNextObject(res)) {
+    while ((curObj = parseNextObject(res))) {
         if (curObj->objKind == oEnd) {
             if (!parent) {
                 genParseError(E_UNEXPECTED_END);
@@ -973,7 +975,8 @@ void setStrValue(struct objWithData info, const char* value)
             return;
         }
         for (i = 0; i < n; i++) {
-            if (!info.objPart->attrList[aChars].valid[value[i]]) {
+            int index = value[i];
+            if (!info.objPart->attrList[aChars].valid[index]) {
                 genParseError(E_INVALID_CHARS);
                 return;
             }
