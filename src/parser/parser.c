@@ -349,13 +349,16 @@ static int getDelimVal(char ch)
     }
 }
 
-static char* getSubString(const char* a, size_t i, size_t j)
+static char* getSubString(const char* string, size_t left, size_t right)
 {
-    char* res;
-    if (j < i) return 0;
-    res = (char*)malloc(j-i+2);
-    res[0] = 0; strncat(res,a+i,j-i+1);
-    return res;
+    char* substr = NULL;
+    if (right >= left) {
+        size_t len = right - left;
+        substr = (char*)malloc(len + 2);
+        substr[0] = 0;
+        strncat(substr, string + left, len + 1);
+    }
+    return substr;
 }
 
 static struct token* newToken(size_t line, size_t pos, size_t i, size_t j)
@@ -560,19 +563,19 @@ static struct expr* parseExpression1(int priority, int isFirst,
                     if (res && !chkCurToken(')')) {
                         genParseError(E_RB_EXPECTED);
                         exprDestructor(res);
-                        return 0;
+                        return NULL;
                     }
                     moveToNextToken();
                     return res;
                 }
                 // don't need "break" here
             default:
-                return 0;
+                return NULL;
         }
     } else {
         op = parseExpression1(priority + 1, 1, curSeq);
 
-        if (wasError()) {exprDestructor(op); return 0;}
+        if (wasError()) {exprDestructor(op); return NULL;}
         if (!op) {
             if (priority == getOpPriority('+') && isFirst &&
                 (chkCurToken('+') || chkCurToken('-'))) { // unary operations
@@ -583,7 +586,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
                 if (priority == getOpPriority('+')) {
                     genParseError(E_OPERAND_EXPECTED);
                 }
-                return 0;
+                return NULL;
             }
         }
 
@@ -591,14 +594,14 @@ static struct expr* parseExpression1(int priority, int isFirst,
             if (priority < getOpPriority('^')) {
                 genParseError(B_UNEXPECTED_CAP);
                 exprDestructor(op);
-                return 0;
+                return NULL;
             }
             res = (struct expr*)malloc(sizeof(struct expr));
             res->op1 = op; res->opCode = '^';
             res->varName = 0; res->intConst = 0;
             moveToNextToken();
             res->op2 = parseExpression1(priority, 0, curSeq);
-            if (!res->op2) {exprDestructor(res->op2); return 0;}
+            if (!res->op2) {exprDestructor(res->op2); return NULL;}
             op = res;
         } else {
             while ((chkCurToken('+') || chkCurToken('-') ||
@@ -610,11 +613,11 @@ static struct expr* parseExpression1(int priority, int isFirst,
                     res->varName = 0; res->intConst = 0;
                     moveToNextToken();
                     res->op2 = parseExpression1(priority, 0, curSeq);
-                    if (!res->op2) {exprDestructor(res); return 0;}
+                    if (!res->op2) {exprDestructor(res); return NULL;}
                     op = res;
             }
         }
-        if (wasError()) {exprDestructor(op); return 0;}
+        if (wasError()) {exprDestructor(op); return NULL;}
         return op;
     }
 }
@@ -662,29 +665,29 @@ static struct attr* parseAttr(struct objRecord* curSeq)
     if (i < 0) {
         genParseError(E_UNKNOWN_ATTRIBUTE);
         attrDestructor(res);
-        return 0;
+        return NULL;
     }
 
-    if (!curToken) return 0;
+    if (!curToken) return NULL;
     switch (attrTypeByKind[i]) {
         case vIdent:
             res->strVal = parseSingleToken(ttIdentifier);
-            if (!res->strVal) {attrDestructor(res); return 0;}
+            if (!res->strVal) {attrDestructor(res); return NULL;}
             break;
         case vInt:
             res->exVal1 = parseExpression(curSeq);
-            if (!res->exVal1) {attrDestructor(res); return 0;}
+            if (!res->exVal1) {attrDestructor(res); return NULL;}
             break;
         case vIntRange:
             parseIntRange(&res->exVal1, &res->exVal2, curSeq);
-            if (!res->exVal1) {attrDestructor(res); return 0;}
+            if (!res->exVal1) {attrDestructor(res); return NULL;}
             break;
         case vCharSet:
             res->strVal = parseSingleToken(ttCharSet);
-            if (!res->strVal) {attrDestructor(res); return 0;}
+            if (!res->strVal) {attrDestructor(res); return NULL;}
             if (isInCharSet(0, res->strVal) < 0) {
                 genParseError(E_INVALID_CHARSET);
-                attrDestructor(res); return 0;
+                attrDestructor(res); return NULL;
             }
             res->charNum = 0;
             memset(res->valid, 0, sizeof(res->valid));
@@ -699,9 +702,9 @@ static struct attr* parseAttr(struct objRecord* curSeq)
             break;
         default:
             genParseError(B_ARRAY_ATTR_TYPE_BY_KIND);
-            attrDestructor(res); return 0;
+            attrDestructor(res); return NULL;
     }
-    if (wasError()) {attrDestructor(res); return 0;}
+    if (wasError()) {attrDestructor(res); return NULL;}
     return res;
 }
 
@@ -738,17 +741,17 @@ static struct attr* parseAttrList(int objKind, struct objRecord* curSeq)
         } else bad = 0;
     }
 
-    if (wasError()) {attrListDestructor(res); return 0;}
+    if (wasError()) {attrListDestructor(res); return NULL;}
     if (n < getAttrCount(objKind)) bad = 1;
     if (bad) {
         attrListDestructor(res);
         genParseError(E_INVALID_ATTRIBUTE_LIST);
-        return 0;
+        return NULL;
     }
     if (!curToken || chkCurToken(';')) {
         if (curToken) moveToNextToken();
         return res;
-    } else {attrListDestructor(res); return 0;}
+    } else {attrListDestructor(res); return NULL;}
 }
 
 static struct objRecord* parseObjRecord1(struct objRecord* parent);
@@ -761,10 +764,10 @@ static struct obj* parseNextObject(struct objRecord* curSeq)
     char* name;
     struct recWithData tmp;
 
-    if (!curToken) return 0;
+    if (!curToken) return NULL;
     if (curToken->type != ttObject) {
         genParseError(E_OBJECT_KIND_EXPECTED);
-        return 0;
+        return NULL;
     }
     objKind = (int)curToken->value; moveToNextToken();
 
@@ -777,7 +780,7 @@ static struct obj* parseNextObject(struct objRecord* curSeq)
             if (findObject(name, tmp, 0).objPart) {
                 genParseError(E_DUPLICATE_OBJECT);
                 attrListDestructor(attrList);
-                return 0;
+                return NULL;
             }
         }
     }
@@ -796,7 +799,7 @@ static struct obj* parseNextObject(struct objRecord* curSeq)
     }
 
     genParseError(E_INVALID_ATTRIBUTE_LIST);
-    return 0;
+    return NULL;
 }
 
 static struct objRecord* parseObjRecord1(struct objRecord* parent)
