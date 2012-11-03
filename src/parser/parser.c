@@ -163,7 +163,7 @@ static void allocWithCopyObjRecord(struct objRecord** a, struct objRecord* b)
     *a = (struct objRecord*)malloc(sizeof(struct objRecord));
     (*a)->n = b->n;
     (*a)->parent = b->parent;
-    (*a)->seq = (struct obj*)malloc(sizeof(struct obj) * b->n);
+    (*a)->seq = (struct obj*)calloc(b->n, sizeof(struct obj));
     for (i = 0; i < b->n; i++) {
         copyObjToObj((*a)->seq + i, b->seq + i);
         (*a)->seq[i].parent = *a;
@@ -177,7 +177,7 @@ static void allocWithCopyAttrList(struct attr** a, struct attr* b, int n)
 {
     int i;
     if (!b) {*a = 0; return;}
-    *a = (struct attr*)malloc(sizeof(struct attr) * n);
+    *a = (struct attr*)calloc(n, sizeof(struct attr));
     for (i = 0; i < n; i++) copyAttrToAttr((*a) + i, b + i);
 }
 
@@ -862,7 +862,7 @@ struct recWithData mallocRecord(struct recWithData info, int isRoot)
         info.pointerToData->parentData = 0;
     }
     info.pointerToData->data =
-        (struct objData*)malloc(info.recPart->n * sizeof(struct objData));
+        (struct objData*)calloc(info.recPart->n, sizeof(struct objData));
     for (i = 0; i < info.recPart->n; i++) {
         info.pointerToData->data[i].value = 0;
         info.pointerToData->data[i].parentData = info.pointerToData;
@@ -1146,7 +1146,7 @@ struct recWithData byIndex(struct objWithData info, int index)
         return res;
     }
     if (!data->value) {
-        data->value = malloc(n * sizeof(struct recordData));
+        data->value = calloc(n, sizeof(struct recordData));
         d = (struct recordData*)(data->value);
         for (i = 0; i < n; i++) {
             tmp = (struct recordData*)malloc(sizeof(struct recordData));
