@@ -1,6 +1,13 @@
 %{
 #include "tokenizer.h"
 
+// Internal function, defined to avoid linking with flex library.
+// Called by tokenizer when EOF is discovered.
+int yywrap()
+{
+    return 1;
+}
+
 size_t yyline = 0;
 size_t yypos = 0;
 
