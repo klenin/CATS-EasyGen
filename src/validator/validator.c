@@ -4,9 +4,10 @@
 
 int32_t main()
 {
+    int32_t code;
+
     freopen("formal.input", "r", stdin);
 
-    int code;
     do
     {
         code = yylex();
