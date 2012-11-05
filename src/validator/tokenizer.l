@@ -1,15 +1,18 @@
 %{
+#include <stdlib.h>
+#include <string.h>
+
 #include "tokenizer.h"
 
 // Internal function, defined to avoid linking with flex library.
 // Called by tokenizer when EOF is discovered.
-int yywrap()
+int yywrap(void)
 {
     return 1;
 }
 
-size_t yyline = 0;
-size_t yypos = 0;
+int32_t yyline = 0;
+int32_t yypos = 0;
 
 int32_t yycurline()
 {
@@ -21,7 +24,7 @@ int32_t yycurpos()
     return yypos;
 }
 
-size_t yytoklen()
+uint32_t yytoklen()
 {
     return yyleng;
 }

@@ -11,7 +11,7 @@ int32_t main()
     do
     {
         code = yylex();
-        printf("%d: '%s' (%d chars)\n", code, yytoktext(), yytoklen());
+        printf("%d: '%s' (%u chars)\n", code, yytoktext(), yytoklen());
     } while (code != ttEof);
 
     fclose(stdin);

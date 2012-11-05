@@ -3,10 +3,6 @@
 //TODO:
 //    more precise line and pos in error generation
 
-#ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <ctype.h>
 #include <float.h>
 #include <math.h>
@@ -233,9 +229,9 @@ int isInCharSet(char ch, char* desc)
             if (i >= (int)n-2) return -1;
             if (desc[i+1] == '-' || desc[i+1] == '}' || desc[i+1] == '\\') {
                 curChar = desc[i+1]; i += 2;
-            } else if (isdigit(desc[i+1])) {
+            } else if (isdigit((unsigned char)desc[i+1])) {
                 j = 1; curChar = 0;
-                while (i+j < (int)n-1 && isdigit(desc[i+j]) &&
+                while (i+j < (int)n-1 && isdigit((unsigned char)desc[i+j]) &&
                     curChar*10+desc[i+j]-'0' < charNumber) {
                         curChar = curChar*10 + desc[i+j] - '0';
                         j++;
@@ -361,11 +357,12 @@ static char* getSubString(const char* string, size_t left, size_t right)
     return substr;
 }
 
-static struct token* newToken(size_t line, size_t pos, size_t i, size_t j)
+static struct token* newToken(size_t tokLine, size_t tokPos, size_t i, size_t j)
 {
     struct token *res = (struct token*)malloc(sizeof(struct token));
-    res->line = line; res->pos = pos;
-    res->str = getSubString(buf, i, j-1);
+    res->line = tokLine;
+    res->pos = tokPos;
+    res->str = getSubString(buf, i, j - 1);
     return res;
 }
 
@@ -963,21 +960,21 @@ void setFloatValue(struct objWithData info, const long double value)
 
 void setStrValue(struct objWithData info, const char* value)
 {
-    size_t i, n;
+    int32_t i, n;
     int64_t l, r;
     if (info.objPart->objKind != oString) {
         genParseError(E_ASSIGN_NON_STRING);
         return;
     }
     if (!info.pointerToData->value) {
-        n = strlen(value);
+        n = (int32_t)strlen(value);
         getIntLR(info, &l, &r);
         if (wasError()) return;
         if (n < l || n > r) {
             genParseError(E_INVALID_STRING_LENGTH);
             return;
         }
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < n; ++i) {
             int index = value[i];
             if (!info.objPart->attrList[aChars].valid[index]) {
                 genParseError(E_INVALID_CHARS);
@@ -1007,27 +1004,26 @@ void autoGenInt(struct objWithData info)
 
 void autoGenFloat(struct objWithData info)
 {
-    int64_t l, r, d;
-    long double tmp;
     if (info.objPart->objKind != oFloat) {
         genParseError(E_GENERATE_NON_FLOAT);
         return;
     }
     if (!info.pointerToData->value) {
-        getIntLR(info, &l, &r);
-        d = evaluate(info.objPart->attrList[aDigits].exVal1, info);
+        long double rnd;
+        int64_t l, r;
+        int64_t d = evaluate(info.objPart->attrList[aDigits].exVal1, info)  ;
         if (wasError()) return;
-        tmp = genRandFloat(l, r, d);
-        info.pointerToData->value = malloc(sizeof(tmp));
-        memcpy(info.pointerToData->value, &tmp, sizeof(tmp));
+        getIntLR(info, &l, &r);
+        rnd = genRandFloat(l, r, d);
+        info.pointerToData->value = malloc(sizeof(rnd));
+        memcpy(info.pointerToData->value, &rnd, sizeof(rnd));
     }
 }
 
 void autoGenStr(struct objWithData info)
 {
-    int64_t l, r, tmp;
-    size_t i;
     char* res;
+    int64_t i, l, r, rnd;
     if (info.objPart->objKind != oString) {
         genParseError(E_GENERATE_NON_STRING);
         return;
@@ -1035,13 +1031,13 @@ void autoGenStr(struct objWithData info)
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
         if (wasError()) return;
-        tmp = genRandInt(l, r);
-        res = (char*)malloc(tmp+1);
-        for (i = 0; i < tmp; i++) {
+        rnd = genRandInt(l, r);
+        res = (char*)malloc(rnd + 1);
+        for (i = 0; i < rnd; ++i) {
             res[i] = info.objPart->attrList[aChars].charSetStr
                 [genRandInt(0, info.objPart->attrList[aChars].charNum - 1)];
         }
-        res[tmp] = 0;
+        res[rnd] = 0;
         info.pointerToData->value = res;
     }
 }
@@ -1049,14 +1045,14 @@ void autoGenStr(struct objWithData info)
 int getSeqLen(struct objWithData info)
 {
     if (info.objPart->objKind != oSeq) genParseError(E_NOT_A_SEQUENCE);
-    return evaluate(info.objPart->attrList[aLength].exVal1, info);
+    return (int)evaluate(info.objPart->attrList[aLength].exVal1, info);
 }
 
 void autoGenSeq(struct objWithData info)
 {
     struct recWithData rnd;
-    int i, n;
-    n = evaluate(info.objPart->attrList[aLength].exVal1, info);
+    int i;
+    int64_t n = evaluate(info.objPart->attrList[aLength].exVal1, info);
     if (wasError()) return;
     if (info.objPart->objKind != oSeq) {
         genParseError(E_GENERATE_NON_SEQUENCE);
@@ -1094,7 +1090,7 @@ void autoGenRecord(struct recWithData info)
 
 int64_t evaluate(struct expr* e, struct objWithData info)
 {
-    int64_t res;
+    int64_t res = 0;
     int64_t i, val1, val2;
     struct recWithData rnd;
     struct objWithData tmp;
@@ -1216,10 +1212,10 @@ void finalize()
 }
 
 //-----------------------------for CATS web-server-----------------------------
-struct parseError* parserValidate(const char* buf)
+struct parseError* parserValidate(const char* data)
 {
     struct parseError* res;
-    initialize(buf);
+    initialize(data);
     parseObjRecord();
     if (wasError()) {
         res = (struct parseError*)malloc(sizeof(struct parseError));

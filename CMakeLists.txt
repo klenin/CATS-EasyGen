@@ -13,7 +13,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 set(GCC_COMMON_FLAGS -W -Wall -pedantic -Wextra -Winit-self)
 set(GCC_CFLAGS -std=c99)
 set(GCC_CXXFLAGS -Weffc++ -Woverloaded-virtual -Wnon-virtual-dtor -Wold-style-cast)
-set(VC_FLAGS /analyze /W3)
+set(VC_FLAGS /analyze /W3 /D_CRT_SECURE_NO_WARNINGS)
 
 if(MSVC)
     add_definitions(${VC_FLAGS})

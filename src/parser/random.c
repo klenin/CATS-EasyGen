@@ -18,7 +18,7 @@ int64_t genRandInt(int64_t l, int64_t r)
     return l + (nextRand() % mod);
 }
 
-long double genRandFloat(int64_t l, int64_t r, int d)
+long double genRandFloat(int64_t l, int64_t r, int64_t d)
 {
     long double d10, x;
     uint64_t len, tmp;
