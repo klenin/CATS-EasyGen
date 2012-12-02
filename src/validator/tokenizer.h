@@ -3,14 +3,21 @@
 
 #include <stdint.h>
 
-enum tokenType
+typedef enum
 {
     ttNewLine,
     ttInteger,
     ttFloat,
     ttString,
     ttEof,
-};
+} TokenType;
+
+typedef struct
+{
+    TokenType type;
+    char* text;
+    uint32_t length;
+} Token;
 
 int32_t yylex();
 int32_t yycurline();
