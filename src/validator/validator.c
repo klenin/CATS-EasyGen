@@ -10,10 +10,12 @@
 // Separate parser and validator errors.
 // Investigate fread return value issue.
 
-static struct objRecord *ValidatorParseFormatDescription(char *format_description)
+static struct objRecord *ValidatorParseFormatDescription(
+    char *formatDescription
+)
 {
     struct objRecord *root = NULL;
-    initialize(format_description);
+    initialize(formatDescription);
     root = parseObjRecord();
     if (wasError())
     {
@@ -25,29 +27,33 @@ static struct objRecord *ValidatorParseFormatDescription(char *format_descriptio
     return root;
 }
 
-ValidatorErrorT *ValidatorValidateString(char *data, char *format_description)
+ValidatorErrorT *ValidatorValidateString(char *input, char *formatDescription)
 {
-    struct objRecord *format = ValidatorParseFormatDescription(format_description);
+    struct objRecord *format = ValidatorParseFormatDescription(
+        formatDescription);
     printf("%p\n", format);
     return ValidatorGetLastError();
 }
 
-ValidatorErrorT *ValidatorValidateFile(char *filename_data, char *filename_format)
+ValidatorErrorT *ValidatorValidateFile(
+    char *inputFilename,
+    char *formatFilename
+)
 {
-    char *data = NULL;
+    char *input = NULL;
     char *format = NULL;
 
-    data = LoadTextFileIntoMemory(filename_data,
-        E_CANNOT_READ_INPUT_FILE);
-    format = LoadTextFileIntoMemory(filename_format,
-        E_CANNOT_READ_FORMAT_DESCRIPTION_FILE);
+    input = LoadTextFileIntoMemory(
+        inputFilename, E_CANNOT_READ_INPUT_FILE);
+    format = LoadTextFileIntoMemory(
+        formatFilename, E_CANNOT_READ_FORMAT_DESCRIPTION_FILE);
 
     if (!ValidatorIsErrorRaised())
     {
-        ValidatorValidateString(data, format);
+        ValidatorValidateString(input, format);
     }
 
-    free(data);
+    free(input);
     free(format);
 
     return ValidatorGetLastError();
