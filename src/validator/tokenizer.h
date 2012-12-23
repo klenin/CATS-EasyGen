@@ -17,13 +17,11 @@ typedef struct
     TokenType type;
     char* text;
     uint32_t length;
+    int32_t line;
+    int32_t pos;
 } Token;
 
-int32_t yylex();
-int32_t yycurline();
-int32_t yycurpos();
-uint32_t yytoklen();
-char* yytoktext();
-char* yytoktextcopy();
+// Allocates memory for the next token and returns pointer to it.
+Token *yynexttoken();
 
 #endif // __TOKENIZER_H__

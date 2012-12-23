@@ -8,7 +8,7 @@ typedef struct
     int32_t line;
     int32_t pos;
     int32_t code;
-} validatorError;
+} ValidatorErrorT;
 
 typedef enum
 {
@@ -23,16 +23,11 @@ typedef enum
 
     // End of range.
     E_NUMBER_OF_ERROR_TYPES,
-} errorType;
+} ValidatorErrorCodeT;
 
-struct _errordesc {
-    int  code;
-    char *message;
-} error_messages[] = {
-    { E_SUCCESS, "no error" },
-    { E_CANNOT_READ_INPUT_FILE, "cannot read input file" },
-    { E_CANNOT_READ_FORMAT_DESCRIPTION_FILE, "cannot read format description file" },
-    { E_NOT_ENOUGH_MEMORY, "not enough memory" },
-};
+ValidatorErrorT *ValidatorGetLastError();
+int32_t ValidatorIsErrorRaised();
+void ValidatorRaiseError(ValidatorErrorCodeT code);
+const char* ValidatorGetErrorMessageByCode(ValidatorErrorCodeT code);
 
 #endif // __ERROR_H__

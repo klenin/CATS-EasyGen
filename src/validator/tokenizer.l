@@ -40,6 +40,18 @@ char* yytoktextcopy()
     strncpy(token, yytext, yyleng);
     return token;
 }
+
+Token *yynexttoken()
+{
+    Token *token = malloc(sizeof(Token));
+    token->type = yylex();
+    token->text = yytoktextcopy();
+    token->length = yytoklen();
+    token->line = yycurline();
+    token->pos = yycurpos();
+    return token;
+}
+
 %}
 
 %%
