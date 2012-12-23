@@ -22,6 +22,7 @@ typedef struct
 } Token;
 
 // Allocates memory for the next token and returns pointer to it.
+// Token structure and its "text" field should be freed by user.
 Token *yynexttoken();
 
 #endif // __TOKENIZER_H__

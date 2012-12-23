@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "tokenizer.h"
+#include "utils.h"
 
 // Internal function, defined to avoid linking with flex library.
 // Called by tokenizer when EOF is discovered.
@@ -36,14 +37,14 @@ char* yytoktext()
 
 char* yytoktextcopy()
 {
-    char* token = malloc(yyleng);
+    char* token = AllocateBuffer(yyleng);
     strncpy(token, yytext, yyleng);
     return token;
 }
 
 Token *yynexttoken()
 {
-    Token *token = malloc(sizeof(Token));
+    Token *token = AllocateBuffer(sizeof(Token));
     token->type = yylex();
     token->text = yytoktextcopy();
     token->length = yytoklen();
