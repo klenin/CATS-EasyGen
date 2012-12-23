@@ -29,13 +29,22 @@ char *LoadTextFileIntoMemory(char *filename, ValidatorErrorCodeT errorCode)
 
     fseek(file, 0L, SEEK_END);
     filesize = ftell(file);
-    rewind(file);
-    buffer = AllocateBuffer(filesize);
+    if (filesize == 0)
+    {
+        ValidatorRaiseError(errorCode);
+    }
+    else
+    {
+        rewind(file);
+        buffer = AllocateBuffer(filesize);
+    }
+
     if (!ValidatorIsErrorRaised())
     {
         size_t actual = fread(buffer, sizeof(char), filesize, file);
         buffer[actual - 1] = '\0';
         fclose(file);
     }
+
     return buffer;
 }
