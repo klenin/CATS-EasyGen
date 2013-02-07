@@ -11,12 +11,12 @@
 // Separate parser and validator errors.
 // Investigate fread return value issue.
 
-static struct objRecord *ValidatorParseFormatDescription(
+static ParserObjectRecordT *ValidatorParseFormatDescription(
     char *formatDescription
 )
 {
-    struct objRecord *tree = NULL;
-    struct parseError *error = NULL;
+    ParserObjectRecordT *tree = NULL;
+    ParserErrorT *error = NULL;
 
     ParserValidateFormatDescription(formatDescription, &tree, &error);
     if (error != NULL && !ValidatorIsErrorRaised())
@@ -41,7 +41,7 @@ static struct objRecord *ValidatorParseFormatDescription(
 
 ValidatorErrorT *ValidatorValidateString(char *input, char *formatDescription)
 {
-    struct objRecord *format = ValidatorParseFormatDescription(
+    ParserObjectRecordT *format = ValidatorParseFormatDescription(
         formatDescription);
 
     return ValidatorGetLastError();

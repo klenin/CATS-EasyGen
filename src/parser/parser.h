@@ -24,13 +24,12 @@ struct attr
     char* charSetStr;
 };
 
-struct obj
+typedef struct
 {
     unsigned int objKind;
     struct attr* attrList;
-    struct objRecord *rec, *parent;
-    //size_t parentNumber;
-};
+    struct ParserInternalObjectRecordT *rec, *parent;
+} ParserObjectT;
 
 struct objData
 {
@@ -44,42 +43,42 @@ struct recordData
 };
 
 
-struct objRecord
+typedef struct ParserInternalObjectRecordT
 {
     int n;
-    struct obj* seq;
-    struct objRecord* parent;
-};
+    ParserObjectT* seq;
+    struct ParserInternalObjectRecordT* parent;
+} ParserObjectRecordT;
 
 struct recWithData
 {
-    struct objRecord* recPart;
+    ParserObjectRecordT* recPart;
     struct recordData* pointerToData;
 };
 
 struct objWithData
 {
-    struct obj* objPart;
+    ParserObjectT* objPart;
     struct objData* pointerToData;
 };
 
-struct parseError
+typedef struct
 {
     size_t line, pos;
     int code;
-};
+} ParserErrorT;
 
 // all destructors free memory for object and it's internal structures
 void exprDestructor(struct expr* a);
 void attrDestructor(struct attr* a);
-void objDestructor(struct obj* a);
-void objRecordDestructor(struct objRecord* a);
-void parseErrorDestructor(struct parseError* a);
+void objDestructor(ParserObjectT* a);
+void objRecordDestructor(ParserObjectRecordT* a);
+void parseErrorDestructor(ParserErrorT* a);
 
 // utilities
 int isInCharSet(char ch, char* desc); // return positive integer if in,
                                                   // negative if error, zero if not in
-struct parseError* getLastError(); // (!) copy global structure to result,
+ParserErrorT* getLastError(); // (!) copy global structure to result,
 int wasError();
 const char* errorMessageByCode(int errCode);
 struct objWithData findObject(const char* name, struct recWithData rec, int goUp);
@@ -88,21 +87,21 @@ int getSeqLen(struct objWithData info);
 // important functions
 void initialize(const char* buf);
 void finalize();
-struct objRecord* parseObjRecord(); // (!)
+ParserObjectRecordT* parseObjRecord(); // (!)
 
 void ParserValidateFormatDescription(
     const char* data,
-    struct objRecord** tree,
-    struct parseError** error
+    ParserObjectRecordT** tree,
+    ParserErrorT** error
 ); // (!)
 
 const char* ParserGetErrorMessageByCode(int errCode);
 
 // mainly for cats web-server
-struct parseError* parserValidate(const char* buf);
-int getErrCode(struct parseError* a);
-size_t getErrLine(struct parseError* a);
-size_t getErrPos(struct parseError* a);
+ParserErrorT* parserValidate(const char* buf);
+int getErrCode(ParserErrorT* a);
+size_t getErrLine(ParserErrorT* a);
+size_t getErrPos(ParserErrorT* a);
 
 struct recWithData mallocRecord(struct recWithData info, int isRoot);
 int64_t evaluate(struct expr* e, struct objWithData info);

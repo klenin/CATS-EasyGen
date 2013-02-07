@@ -57,7 +57,7 @@ struct token
 static const char* buf;
 static size_t bufSize, bufPos, line, pos;
 static struct token* curToken;
-static struct parseError* lastError;
+static ParserErrorT* lastError;
 
 #ifndef __my__release
     static char* buf1;
@@ -66,7 +66,7 @@ static struct parseError* lastError;
 static void genParseError(int errCode);
 
 //------------------------------ work with memory procedures-------------------
-void parseErrorDestructor(struct parseError* a)
+void parseErrorDestructor(ParserErrorT* a)
 {
     free(a);
 }
@@ -110,20 +110,20 @@ void attrListDestructor(struct attr* attrList)
     free(attrList);
 }
 
-static void objDestructor1(struct obj* a)
+static void objDestructor1(ParserObjectT* a)
 {
     if (!a) return;
     attrListDestructor(a->attrList);
     objRecordDestructor(a->rec);
 }
 
-void objDestructor(struct obj* a)
+void objDestructor(ParserObjectT* a)
 {
     objDestructor1(a);
     free(a);
 }
 
-void objRecordDestructor(struct objRecord* a)
+void objRecordDestructor(ParserObjectRecordT* a)
 {
     int i;
     if (!a) return;
@@ -150,16 +150,16 @@ static void allocWithCopyExpr(struct expr** a, struct expr* b)
     allocWithCopyExpr(&((*a)->op2), b->op2);
 }
 
-static void copyObjToObj(struct obj* a, struct obj* b);
+static void copyObjToObj(ParserObjectT* a, ParserObjectT* b);
 
-static void allocWithCopyObjRecord(struct objRecord** a, struct objRecord* b)
+static void allocWithCopyObjRecord(ParserObjectRecordT** a, ParserObjectRecordT* b)
 {
     int i;
     if (!b) {*a = 0; return;}
-    *a = (struct objRecord*)malloc(sizeof(struct objRecord));
+    *a = (ParserObjectRecordT*)malloc(sizeof(ParserObjectRecordT));
     (*a)->n = b->n;
     (*a)->parent = b->parent;
-    (*a)->seq = (struct obj*)calloc(b->n, sizeof(struct obj));
+    (*a)->seq = (ParserObjectT*)calloc(b->n, sizeof(ParserObjectT));
     for (i = 0; i < b->n; i++) {
         copyObjToObj((*a)->seq + i, b->seq + i);
         (*a)->seq[i].parent = *a;
@@ -188,7 +188,7 @@ static void copyAttrToAttr(struct attr* a, struct attr* b)
     allocWithCopyExpr(&(a->exVal2), b->exVal2);
 }
 
-static void copyObjToObj(struct obj* a, struct obj* b)
+static void copyObjToObj(ParserObjectT* a, ParserObjectT* b)
 {
     a->objKind = b->objKind;
     a->parent = b->parent;
@@ -196,7 +196,7 @@ static void copyObjToObj(struct obj* a, struct obj* b)
     allocWithCopyAttrList(&(a->attrList), b->attrList, allAttrCount);
 }
 
-static void copyErrToErr(struct parseError* a, struct parseError* b)
+static void copyErrToErr(ParserErrorT* a, ParserErrorT* b)
 {
     a->code = b->code; a->line = b->line; a->pos = b->pos;
 }
@@ -275,11 +275,11 @@ const char* ParserGetErrorMessageByCode(int errCode)
     return errorMessages[E_UNKNOWN_ERROR].message;
 }
 
-struct parseError* getLastError()
+ParserErrorT* getLastError()
 {
-    struct parseError* res;
+    ParserErrorT* res;
     if (!lastError) return 0;
-    res = (struct parseError*)malloc(sizeof(struct parseError));
+    res = (ParserErrorT*)malloc(sizeof(ParserErrorT));
     copyErrToErr(res, lastError);
     return res;
 }
@@ -292,7 +292,7 @@ int wasError()
 static void genParseError(int errCode)
 {
     if (!lastError) {
-        lastError = (struct parseError*)malloc(sizeof(struct parseError));
+        lastError = (ParserErrorT*)malloc(sizeof(ParserErrorT));
         lastError->code = errCode; lastError->line = line; lastError->pos = pos;
     }
     #ifndef __my__release
@@ -524,10 +524,10 @@ static int getOpPriority(char op)
 }
 
 static struct expr* parseExpression1(int priority, int isFirst,
-    struct objRecord* curSeq)
+    ParserObjectRecordT* curSeq)
 {
     struct expr *res, *op;
-    struct obj* varObj;
+    ParserObjectT* varObj;
     struct recWithData tmp;
     char ch;
     if (priority > priorityNumber) {
@@ -619,12 +619,12 @@ static struct expr* parseExpression1(int priority, int isFirst,
     }
 }
 
-static struct expr* parseExpression(struct objRecord* curSeq)
+static struct expr* parseExpression(ParserObjectRecordT* curSeq)
 {
     return parseExpression1(1,1,curSeq);
 }
 
-static void parseIntRange(struct expr** ex1, struct expr** ex2, struct objRecord* curSeq)
+static void parseIntRange(struct expr** ex1, struct expr** ex2, ParserObjectRecordT* curSeq)
 {
     if (chkCurToken('[')) {
         moveToNextToken();
@@ -644,7 +644,7 @@ static void parseIntRange(struct expr** ex1, struct expr** ex2, struct objRecord
     }
 }
 
-static struct attr* parseAttr(struct objRecord* curSeq)
+static struct attr* parseAttr(ParserObjectRecordT* curSeq)
 {
     struct attr* res;
     int i, j, k;
@@ -705,7 +705,7 @@ static struct attr* parseAttr(struct objRecord* curSeq)
     return res;
 }
 
-static struct attr* parseAttrList(int objKind, struct objRecord* curSeq)
+static struct attr* parseAttrList(int objKind, ParserObjectRecordT* curSeq)
 {
     //it should eat semicolons too
     struct attr *res = 0;
@@ -751,12 +751,12 @@ static struct attr* parseAttrList(int objKind, struct objRecord* curSeq)
     } else {attrListDestructor(res); return NULL;}
 }
 
-static struct objRecord* parseObjRecord1(struct objRecord* parent);
+static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent);
 
-static struct obj* parseNextObject(struct objRecord* curSeq)
+static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
 {
     int objKind;
-    struct obj* res;
+    ParserObjectT* res;
     struct attr* attrList;
     char* name;
     struct recWithData tmp;
@@ -784,7 +784,7 @@ static struct obj* parseNextObject(struct objRecord* curSeq)
 
     if (attrList || objKind == oEnd ||
         objKind == oNewLine || objKind == oSoftLine) {
-            res = (struct obj*)malloc(sizeof(struct obj));
+            res = (ParserObjectT*)malloc(sizeof(ParserObjectT));
             res->attrList = attrList; res->objKind = objKind;
             if (objKind == oSeq) {
                 res->rec = parseObjRecord1(curSeq);
@@ -799,13 +799,13 @@ static struct obj* parseNextObject(struct objRecord* curSeq)
     return NULL;
 }
 
-static struct objRecord* parseObjRecord1(struct objRecord* parent)
+static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent)
 {
-    struct obj* curObj;
-    struct objRecord *res, *tmp;
+    ParserObjectT* curObj;
+    ParserObjectRecordT *res, *tmp;
     int wasEnd = 0;
     int i;
-    res = (struct objRecord*)malloc(sizeof(struct objRecord));
+    res = (ParserObjectRecordT*)malloc(sizeof(ParserObjectRecordT));
     res->n = 0; res->seq = 0; res->parent = parent;
 
     while ((curObj = parseNextObject(res))) {
@@ -819,8 +819,8 @@ static struct objRecord* parseObjRecord1(struct objRecord* parent)
             break;
         }
         res->n++;
-        tmp = (struct objRecord*)malloc(sizeof(struct objRecord));
-        tmp->seq = (struct obj*)malloc(res->n * sizeof(struct obj));
+        tmp = (ParserObjectRecordT*)malloc(sizeof(ParserObjectRecordT));
+        tmp->seq = (ParserObjectT*)malloc(res->n * sizeof(ParserObjectT));
         for (i = 0; i < res->n - 1; i++) {
             copyObjToObj(tmp->seq + i, res->seq + i);
             tmp->seq[i].parent = tmp;
@@ -844,7 +844,7 @@ static struct objRecord* parseObjRecord1(struct objRecord* parent)
     return res;
 }
 
-struct objRecord* parseObjRecord()
+ParserObjectRecordT* parseObjRecord()
 {
     return parseObjRecord1(0);
 }
@@ -1130,7 +1130,7 @@ struct objWithData byName(struct recWithData info, const char* name)
 struct recWithData byIndex(struct objWithData info, int index)
 {
     struct objData* data = info.pointerToData;
-    struct obj* a = info.objPart;
+    ParserObjectT* a = info.objPart;
     struct recWithData res;
     struct recordData* d, *tmp;
     int n = (int)evaluate(a->attrList[aLength].exVal1, info);
@@ -1213,8 +1213,8 @@ void finalize()
 
 void ParserValidateFormatDescription(
     const char* data,
-    struct objRecord** tree,
-    struct parseError** error
+    ParserObjectRecordT** tree,
+    ParserErrorT** error
 )
 {
     initialize(data);
@@ -1223,7 +1223,7 @@ void ParserValidateFormatDescription(
     *tree = parseObjRecord();
     if (wasError())
     {
-        *error = (struct parseError*)malloc(sizeof(struct parseError));
+        *error = (ParserErrorT*)malloc(sizeof(ParserErrorT));
         copyErrToErr(*error, lastError);
     }
 
@@ -1231,17 +1231,17 @@ void ParserValidateFormatDescription(
 }
 
 //-----------------------------for CATS web-server-----------------------------
-struct parseError* parserValidate(const char* data)
+ParserErrorT* parserValidate(const char* data)
 {
-    struct parseError* result;
-    struct objRecord* tree;
+    ParserErrorT* result;
+    ParserObjectRecordT* tree;
     ParserValidateFormatDescription(data, &tree, &result);
     return result;
 }
 
-int getErrCode(struct parseError* a) {return a->code;}
-size_t getErrLine(struct parseError* a) {return a->line;}
-size_t getErrPos(struct parseError* a) {return a->pos;}
+int getErrCode(ParserErrorT* a) {return a->code;}
+size_t getErrLine(ParserErrorT* a) {return a->line;}
+size_t getErrPos(ParserErrorT* a) {return a->pos;}
 
 
 // begin of "#ifndef __my__release" - begin of debug and test code
@@ -1299,10 +1299,10 @@ static void debugCharSetPrint(char* s)
     for (i = 0; i < 256; i++) if (isInCharSet(i, s)) printf("%d ",i);
 }
 
-static void debugPrintobjRecord(struct objRecord* a, int indent)
+static void debugPrintobjRecord(ParserObjectRecordT* a, int indent)
 {
     int i,j,k;
-    struct obj* co;
+    ParserObjectT* co;
 
     if (lastError) {
         if (a) printf("Error, but objRecord is not destroyed\n");
@@ -1346,8 +1346,8 @@ static void debugPrintobjRecord(struct objRecord* a, int indent)
 int main()
 {
     size_t i;
-    struct obj* co;
-    struct objRecord* os;
+    ParserObjectT* co;
+    ParserObjectRecordT* os;
 
     debugReadFile("format.txt");
     initialize(buf1);

@@ -24,7 +24,7 @@ bool wasSpaceChar;
 void genError::processParseError()
 {
     if (wasError()) {
-        parseError* tmp = getLastError();
+        ParserErrorT* tmp = getLastError();
         ostringstream ss;
         ss << string(ParserGetErrorMessageByCode(tmp->code))
             << ". Line: " << tmp->line << ", pos: " << tmp->pos;
@@ -97,7 +97,7 @@ testInfo::testInfo(int argc, char* argv[])
 
     buf = loadFormatFile(formalInputFName);
     initialize(buf);
-    objRecord* tmp = parseObjRecord();
+    ParserObjectRecordT* tmp = parseObjRecord();
     genError::processParseError();
     desc.a.pointerToData = 0; desc.a.recPart = tmp;
     desc.a = mallocRecord(desc.a, 1);
@@ -329,7 +329,7 @@ void prxObject::autoGen()
     */
     /*freopen("format.txt","r",stdin);
     char s[10000]; cin.getline(s,10000);
-    parseError* res = validate(s);
+    ParserErrorT* res = validate(s);
     cout << res->code;
     fclose(stdin);*/
 
