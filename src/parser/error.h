@@ -57,6 +57,8 @@ enum parseErrorCode
     E_INVALID_INDEX,
     E_ZERO_DIVISION,
 
+    E_UNKNOWN_ERROR,
+
     // End of range.
     E_NUMBER_OF_ERROR_TYPES,
 };
@@ -111,6 +113,8 @@ struct _errordesc {
     { E_DESTROY_NON_SEQUENCE, "attempt to destroy non-sequence object as sequence" },
     { E_INVALID_INDEX, "sequence index is out of range" },
     { E_ZERO_DIVISION, "attempt to divide by zero" },
+
+    { E_UNKNOWN_ERROR, "unknown error" },
 };
 
 #endif // __ERROR_H__

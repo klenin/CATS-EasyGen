@@ -262,7 +262,7 @@ int isInCharSet(char ch, char* desc)
     return inv;
 }
 
-const char* errorMessageByCode(int errCode)
+const char* ParserGetErrorMessageByCode(int errCode)
 {
     if (errCode >= E_ERROR_RANGE_START && errCode < E_NUMBER_OF_ERROR_TYPES) {
         int i;
@@ -272,7 +272,7 @@ const char* errorMessageByCode(int errCode)
             }
         }
     }
-    return NULL;
+    return errorMessages[E_UNKNOWN_ERROR].message;
 }
 
 struct parseError* getLastError()
@@ -1211,18 +1211,32 @@ void finalize()
     parseErrorDestructor(lastError);
 }
 
+void ParserValidateFormatDescription(
+    const char* data,
+    struct objRecord** tree,
+    struct parseError** error
+)
+{
+    initialize(data);
+
+    *error = NULL;
+    *tree = parseObjRecord();
+    if (wasError())
+    {
+        *error = (struct parseError*)malloc(sizeof(struct parseError));
+        copyErrToErr(*error, lastError);
+    }
+
+    finalize();
+}
+
 //-----------------------------for CATS web-server-----------------------------
 struct parseError* parserValidate(const char* data)
 {
-    struct parseError* res;
-    initialize(data);
-    parseObjRecord();
-    if (wasError()) {
-        res = (struct parseError*)malloc(sizeof(struct parseError));
-        copyErrToErr(res, lastError);
-    } else res = 0;
-    finalize();
-    return res;
+    struct parseError* result;
+    struct objRecord* tree;
+    ParserValidateFormatDescription(data, &tree, &result);
+    return result;
 }
 
 int getErrCode(struct parseError* a) {return a->code;}
@@ -1292,7 +1306,8 @@ static void debugPrintobjRecord(struct objRecord* a, int indent)
 
     if (lastError) {
         if (a) printf("Error, but objRecord is not destroyed\n");
-        printf("Error: %s. Line %d, pos %d\n", errorMessageByCode(lastError->code),
+        printf("Error: %s. Line %d, pos %d\n",
+            ParserGetErrorMessageByCode(lastError->code),
             lastError->line, lastError->pos);
         return;
     }

@@ -26,7 +26,7 @@ void genError::processParseError()
     if (wasError()) {
         parseError* tmp = getLastError();
         ostringstream ss;
-        ss << string(errorMessageByCode(tmp->code))
+        ss << string(ParserGetErrorMessageByCode(tmp->code))
             << ". Line: " << tmp->line << ", pos: " << tmp->pos;
         throw genError(ss.str());
     }

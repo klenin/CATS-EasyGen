@@ -14,6 +14,7 @@ static ValidatorErrorMessagesListT gErrorMessages[] = {
     { E_CANNOT_READ_INPUT_FILE, "cannot read input file" },
     { E_CANNOT_READ_FORMAT_DESCRIPTION_FILE, "cannot read format description file" },
     { E_NOT_ENOUGH_MEMORY, "not enough memory" },
+    { E_PARSER_ERROR, "format parser error: " },
 };
 
 ValidatorErrorT *ValidatorGetLastError()
@@ -30,10 +31,21 @@ void ValidatorRaiseError(ValidatorErrorCodeT code)
 {
     if (LastError == NULL)
     {
-        LastError = AllocateBuffer(sizeof(ValidatorErrorCodeT));
+        LastError = AllocateBuffer(sizeof(ValidatorErrorT));
         LastError->code = code;
-        //LastError->line = line;
-        //LastError->pos = pos;
+        LastError->message = ValidatorGetErrorMessageByCode(code);
+        LastError->line = -1;
+        LastError->pos = -1;
+    }
+}
+
+void ValidatorRaiseErrorEx(ValidatorErrorCodeT code, int32_t line, int32_t pos)
+{
+    if (LastError == NULL)
+    {
+        ValidatorRaiseError(code);
+        LastError->line = line;
+        LastError->pos = pos;
     }
 }
 

@@ -90,6 +90,14 @@ void initialize(const char* buf);
 void finalize();
 struct objRecord* parseObjRecord(); // (!)
 
+void ParserValidateFormatDescription(
+    const char* data,
+    struct objRecord** tree,
+    struct parseError** error
+); // (!)
+
+const char* ParserGetErrorMessageByCode(int errCode);
+
 // mainly for cats web-server
 struct parseError* parserValidate(const char* buf);
 int getErrCode(struct parseError* a);
