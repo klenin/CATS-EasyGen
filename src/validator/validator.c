@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "parser.h"
+#include "iterator.h"
 
 #include "tokenizer.h"
 #include "error.h"
@@ -43,6 +44,24 @@ ValidatorErrorT *ValidatorValidateString(char *input, char *formatDescription)
 {
     ParserObjectRecordT *format = ValidatorParseFormatDescription(
         formatDescription);
+
+    if (format != NULL)
+    {
+        ParserObjectRecordIteratorT *it = NULL;
+        ParserObjectT *object = NULL;
+
+        for (it = ParserObjectRecordGetFrontElement(format);
+                  ParserObjectRecordIteratorIsValid(it);
+                  ParserObjectRecordIteratorAdvance(it))
+        {
+            object = ParserObjectRecordIteratorDereference(it);
+            printf("objKind '%d'\n", object->objKind);
+            printf("attrName '%s'\n", object->attrList[0].attrName);
+            printf("strVal '%s'\n", object->attrList[0].strVal);
+            printf("\n");
+        }
+
+    }
 
     return ValidatorGetLastError();
 }
