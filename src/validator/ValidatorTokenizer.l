@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "tokenizer.h"
-#include "utils.h"
+#include "Allocator.h"
+#include "ValidatorTokenizer.h"
 
 // Internal function, defined to avoid linking with flex library.
 // Called by tokenizer when EOF is discovered.

@@ -1,5 +1,5 @@
-#ifndef __TOKENIZER_H__
-#define __TOKENIZER_H__
+#ifndef __VALIDATOR_TOKENIZER_H__
+#define __VALIDATOR_TOKENIZER_H__
 
 #include <stdint.h>
 
@@ -25,4 +25,4 @@ typedef struct
 // Token structure and its "text" field should be freed by user.
 Token *yynexttoken();
 
-#endif // __TOKENIZER_H__
+#endif // __VALIDATOR_TOKENIZER_H__

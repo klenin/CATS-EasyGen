@@ -27,6 +27,9 @@ elseif(CMAKE_COMPILER_IS_GNUCC)
     endforeach()
 endif()
 
+include_directories(src/include)
+include_directories(src/libraries/include)
+
 add_subdirectory(src/libraries)
 add_subdirectory(src/parser)
 add_subdirectory(src/validator)

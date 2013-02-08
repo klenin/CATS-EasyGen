@@ -54,7 +54,6 @@
 
 # define E4C_VERSION_(version)          version(2, 8, 15)
 
-
 # if !defined(E4C_THREADSAFE) && ( \
         defined(_THREAD_SAFE) \
     ||  defined(_REENTRANT) \
@@ -88,7 +87,6 @@
 #   error "Please define E4C_THREADSAFE at compiler level " \
 "in order to enable the multi-thread version of exceptions4c."
 # endif
-
 
 /*@-exportany@*/
 
@@ -3344,6 +3342,10 @@ E4C_NORETURN;
 
 # endif
 
+# define E4C_DECLARE_CONTEXT_STATUS volatile int e4c_status = E4C_FALSE;
+# define E4C_REUSE_CONTEXT e4c_reusing_context(e4c_status, E4C_TRUE){
+# define E4C_CLOSE_CONTEXT }
+# define E4C_WAS_EXCEPTION_THROWN() (e4c_status == E4C_TRUE)
 
 /*@=exportany@*/
 

@@ -1,3 +1,4 @@
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
+add_subdirectory(allocator)
 add_subdirectory(exceptions)
+add_subdirectory(file)
+
