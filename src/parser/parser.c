@@ -437,7 +437,7 @@ static void moveToNextToken()
                 if (fin) {
                     curToken = newToken(line1,pos1,oldPos,bufPos);
                     curToken->type = ttInteger; curToken->value = 0;
-                    if (bufPos - oldPos > maxIntLen) {
+                    if (bufPos - oldPos > LLONG_MAX_LEN) {
                         genParseError(E_TOO_LONG_INTEGER);
                         return;
                     }
@@ -996,7 +996,7 @@ void autoGenInt(struct objWithData info)
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
         if (wasError()) return;
-        tmp = genRandInt(l, r);
+        tmp = GenerateRandInt(l, r);
         info.pointerToData->value = malloc(sizeof(tmp));
         memcpy(info.pointerToData->value, &tmp, sizeof(tmp));
     }
@@ -1014,7 +1014,7 @@ void autoGenFloat(struct objWithData info)
         int64_t d = evaluate(info.objPart->attrList[aDigits].exVal1, info)  ;
         if (wasError()) return;
         getIntLR(info, &l, &r);
-        rnd = genRandFloat(l, r, d);
+        rnd = GenerateRandFloat(l, r, d);
         info.pointerToData->value = malloc(sizeof(rnd));
         memcpy(info.pointerToData->value, &rnd, sizeof(rnd));
     }
@@ -1031,11 +1031,11 @@ void autoGenStr(struct objWithData info)
     if (!info.pointerToData->value) {
         getIntLR(info, &l, &r);
         if (wasError()) return;
-        rnd = genRandInt(l, r);
-        res = (char*)malloc(rnd + 1);
+        rnd = GenerateRandInt(l, r);
+        res = (char*)malloc((size_t)rnd + 1);
         for (i = 0; i < rnd; ++i) {
             res[i] = info.objPart->attrList[aChars].charSetStr
-                [genRandInt(0, info.objPart->attrList[aChars].charNum - 1)];
+                [GenerateRandInt(0, info.objPart->attrList[aChars].charNum - 1)];
         }
         res[rnd] = 0;
         info.pointerToData->value = res;

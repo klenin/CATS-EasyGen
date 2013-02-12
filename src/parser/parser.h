@@ -1,8 +1,10 @@
 #ifndef __PARSER_H__
 #define __PARSER_H__
 
-#include "numerics.h"
-#include "random.h"
+#include <stdlib.h>
+
+#include "Numerics.h"
+#include "Random.h"
 
 enum objKind {oNewLine, oSoftLine, oInteger, oFloat, oString, oSeq, oEnd};
 

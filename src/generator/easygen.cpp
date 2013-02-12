@@ -10,6 +10,9 @@
 // Header <cstdint> requires C++0x, so use it's old name.
 #include <stdint.h>
 
+#include "Numerics.h"
+#include "Random.h"
+
 #include "easygen.h"
 
 using namespace std;
@@ -117,7 +120,7 @@ testInfo::~testInfo()
 int64_t testInfo::getIntParam(const string& name)
 {
     string tmp = params[name];
-    if (tmp.length() > getMaxIntLen()) throw genError("too long integer in command line");
+    if (tmp.length() > LLONG_MAX_LEN) throw genError("too long integer in command line");
     istringstream ss(tmp); int64_t res;
     ss >> res;
     if (ss.fail()) throw genError("trying to get int param from non-int param");
@@ -136,7 +139,7 @@ long double testInfo::getFloatParam(const string& name)
 void testInfo::paramsToVars()
 {
     for (map<string, string>::iterator i = params.begin(); i != params.end(); ++i) {
-        if (i->first == randseedParamName) setRandSeed(getIntParam(i->first));
+        if (i->first == randseedParamName) SetRandSeed(getIntParam(i->first));
         else {
             objWithData tmp = findObject(i->first.c_str(), desc.a, 0);
             if (tmp.objPart) {
