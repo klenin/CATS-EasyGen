@@ -17,7 +17,7 @@ int32_t ValidatorIsErrorRaised()
 
 void ValidatorRaiseError(const char *message)
 {
-    if (LastError == NULL)
+    if (!ValidatorIsErrorRaised())
     {
         LastError = AllocateBuffer(sizeof(ValidatorErrorT));
         LastError->message = AllocateBuffer(strlen(message));
@@ -29,7 +29,7 @@ void ValidatorRaiseError(const char *message)
 
 void ValidatorRaiseErrorEx(const char *message, int32_t line, int32_t pos)
 {
-    if (LastError == NULL)
+    if (!ValidatorIsErrorRaised())
     {
         ValidatorRaiseError(message);
         LastError->line = line;

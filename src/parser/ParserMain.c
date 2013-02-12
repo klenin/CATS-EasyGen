@@ -10,9 +10,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Random.h"
+#include "Allocator.h"
+#include "Exceptions.h"
 #include "Parser.h"
 #include "ParserError.h"
+#include "Random.h"
 
 #define charNumber 256
 #define tmpBufSize 10240
@@ -55,7 +57,8 @@ struct token
 };
 
 static const char* buf;
-static size_t bufSize, bufPos, line, pos;
+static size_t bufSize, bufPos;
+static int line, pos;
 static struct token* curToken;
 static ParserErrorT* lastError;
 
@@ -135,14 +138,14 @@ void objRecordDestructor(ParserObjectRecordT* a)
 static void allocWithCopyStr(char** a, char* b)
 {
     if (!b) {*a = 0; return;}
-    *a = (char*)malloc(strlen(b) + 1);
-    strcpy(*a,b);
+    *a = AllocateBuffer(strlen(b) + 1);
+    strcpy(*a, b);
 }
 
 static void allocWithCopyExpr(struct expr** a, struct expr* b)
 {
     if (!b) {*a = 0; return;}
-    *a = (struct expr*)malloc(sizeof(struct expr));
+    *a = AllocateBuffer(sizeof(struct expr));
     (*a)->intConst = b->intConst;
     (*a)->opCode = b->opCode;
     allocWithCopyStr(&((*a)->varName), b->varName);
@@ -156,10 +159,10 @@ static void allocWithCopyObjRecord(ParserObjectRecordT** a, ParserObjectRecordT*
 {
     int i;
     if (!b) {*a = 0; return;}
-    *a = (ParserObjectRecordT*)malloc(sizeof(ParserObjectRecordT));
+    *a = AllocateBuffer(sizeof(ParserObjectRecordT));
     (*a)->n = b->n;
     (*a)->parent = b->parent;
-    (*a)->seq = (ParserObjectT*)calloc(b->n, sizeof(ParserObjectT));
+    (*a)->seq = AllocateArray(b->n, sizeof(ParserObjectT));
     for (i = 0; i < b->n; i++) {
         copyObjToObj((*a)->seq + i, b->seq + i);
         (*a)->seq[i].parent = *a;
@@ -173,7 +176,7 @@ static void allocWithCopyAttrList(struct attr** a, struct attr* b, int n)
 {
     int i;
     if (!b) {*a = 0; return;}
-    *a = (struct attr*)calloc(n, sizeof(struct attr));
+    *a = AllocateArray(n, sizeof(struct attr));
     for (i = 0; i < n; i++) copyAttrToAttr((*a) + i, b + i);
 }
 
@@ -279,7 +282,7 @@ ParserErrorT* getLastError()
 {
     ParserErrorT* res;
     if (!lastError) return 0;
-    res = (ParserErrorT*)malloc(sizeof(ParserErrorT));
+    res = AllocateBuffer(sizeof(ParserErrorT));
     copyErrToErr(res, lastError);
     return res;
 }
@@ -292,7 +295,7 @@ int wasError()
 static void genParseError(int errCode)
 {
     if (!lastError) {
-        lastError = (ParserErrorT*)malloc(sizeof(ParserErrorT));
+        lastError = AllocateBuffer(sizeof(ParserErrorT));
         lastError->code = errCode; lastError->line = line; lastError->pos = pos;
     }
     #ifndef __my__release
@@ -350,7 +353,7 @@ static char* getSubString(const char* string, size_t left, size_t right)
     char* substr = NULL;
     if (right >= left) {
         size_t len = right - left;
-        substr = (char*)malloc(len + 2);
+        substr = AllocateBuffer(len + 2);
         substr[0] = 0;
         strncat(substr, string + left, len + 1);
     }
@@ -359,7 +362,7 @@ static char* getSubString(const char* string, size_t left, size_t right)
 
 static struct token* newToken(size_t tokLine, size_t tokPos, size_t i, size_t j)
 {
-    struct token *res = (struct token*)malloc(sizeof(struct token));
+    struct token *res = AllocateBuffer(sizeof(struct token));
     res->line = tokLine;
     res->pos = tokPos;
     res->str = getSubString(buf, i, j - 1);
@@ -420,7 +423,7 @@ static void moveToNextToken()
                 i = getDelimVal(ch);
                 moveToNextChar();
                 if (i != -1) {
-                    curToken = (struct token*)malloc(sizeof(struct token));
+                    curToken = AllocateBuffer(sizeof(struct token));
                     curToken = newToken(line1, pos1, oldPos, bufPos);
                     curToken->type = ttDelim; curToken->value = i;
                     return;
@@ -504,7 +507,7 @@ static char* parseSingleToken(int tokenType)
 {
     char* res = NULL;
     if (curToken && curToken->type == tokenType) {
-        res = (char*)malloc(strlen(curToken->str) + 1);
+        res = AllocateBuffer(strlen(curToken->str) + 1);
         strcpy(res, curToken->str);
         moveToNextToken();
     } else {
@@ -533,9 +536,9 @@ static struct expr* parseExpression1(int priority, int isFirst,
     if (priority > priorityNumber) {
         switch (curToken->type) {
             case ttIdentifier:
-                res = (struct expr*)malloc(sizeof(struct expr));
+                res = AllocateBuffer(sizeof(struct expr));
                 res->op1 = res->op2 = 0; res->opCode = 0;
-                res->varName = (char*)malloc(strlen(curToken->str) + 1);
+                res->varName = AllocateBuffer(strlen(curToken->str) + 1);
                 strcpy(res->varName, curToken->str);
 
                 tmp.pointerToData = 0; tmp.recPart = curSeq;
@@ -547,7 +550,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
                 if (wasError()) {exprDestructor(res); return 0;}
                 return res;
             case ttInteger:
-                res = (struct expr*)malloc(sizeof(struct expr));
+                res = AllocateBuffer(sizeof(struct expr));
                 res->op1 = res->op2 = 0; res->opCode = 0; res->varName = 0;
                 res->intConst = curToken->value;
                 moveToNextToken();
@@ -576,7 +579,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
         if (!op) {
             if (priority == getOpPriority('+') && isFirst &&
                 (chkCurToken('+') || chkCurToken('-'))) { // unary operations
-                    op = (struct expr*)malloc(sizeof(struct expr));
+                    op = AllocateBuffer(sizeof(struct expr));
                     op->op1 = op->op2 = 0; op->opCode = 0; op->varName = 0;
                     op->intConst = 0;
             } else {
@@ -593,7 +596,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
                 exprDestructor(op);
                 return NULL;
             }
-            res = (struct expr*)malloc(sizeof(struct expr));
+            res = AllocateBuffer(sizeof(struct expr));
             res->op1 = op; res->opCode = '^';
             res->varName = 0; res->intConst = 0;
             moveToNextToken();
@@ -605,7 +608,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
                 chkCurToken('*') || chkCurToken('/')) &&
                 getOpPriority((int)curToken->value) == priority) {
                     ch = (char)curToken->value;
-                    res = (struct expr*)malloc(sizeof(struct expr));
+                    res = AllocateBuffer(sizeof(struct expr));
                     res->op1 = op; res->opCode = ch;
                     res->varName = 0; res->intConst = 0;
                     moveToNextToken();
@@ -650,9 +653,9 @@ static struct attr* parseAttr(ParserObjectRecordT* curSeq)
     int i, j, k;
 
     if (!curToken || curToken->type != ttAttrName) return 0;
-    res = (struct attr*)malloc(sizeof(struct attr));
+    res = AllocateBuffer(sizeof(struct attr));
     memset(res,0,sizeof(struct attr));
-    res->attrName = (char*)malloc(strlen(curToken->str) + 1);
+    res->attrName = AllocateBuffer(strlen(curToken->str) + 1);
     strcpy(res->attrName, curToken->str);
     moveToNextToken();
     if (!chkCurToken('=')) {attrDestructor(res); return 0;}
@@ -692,7 +695,7 @@ static struct attr* parseAttr(ParserObjectRecordT* curSeq)
                 res->valid[j] = isInCharSet(j, res->strVal);
                 if (res->valid[j]) res->charNum++;
             }
-            res->charSetStr = (char*)malloc(res->charNum+1);
+            res->charSetStr = AllocateBuffer(res->charNum+1);
             res->charSetStr[res->charNum] = 0; k = 0;
             for (j = 0; j < charNumber; j++)
                 if (res->valid[j]) res->charSetStr[k++] = j;
@@ -713,7 +716,7 @@ static struct attr* parseAttrList(int objKind, ParserObjectRecordT* curSeq)
     int bad = 0, i, n = 0;
     int vis[allAttrCount];
 
-    res = (struct attr*)calloc(allAttrCount, sizeof(struct attr));
+    res = AllocateArray(allAttrCount, sizeof(struct attr));
     memset(res, 0, allAttrCount * sizeof(struct attr));
     memset(vis, 0, sizeof(vis));
 
@@ -784,7 +787,7 @@ static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
 
     if (attrList || objKind == oEnd ||
         objKind == oNewLine || objKind == oSoftLine) {
-            res = (ParserObjectT*)malloc(sizeof(ParserObjectT));
+            res = AllocateBuffer(sizeof(ParserObjectT));
             res->attrList = attrList; res->objKind = objKind;
             if (objKind == oSeq) {
                 res->rec = parseObjRecord1(curSeq);
@@ -805,7 +808,7 @@ static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent)
     ParserObjectRecordT *res, *tmp;
     int wasEnd = 0;
     int i;
-    res = (ParserObjectRecordT*)malloc(sizeof(ParserObjectRecordT));
+    res = AllocateBuffer(sizeof(ParserObjectRecordT));
     res->n = 0; res->seq = 0; res->parent = parent;
 
     while ((curObj = parseNextObject(res))) {
@@ -819,8 +822,8 @@ static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent)
             break;
         }
         res->n++;
-        tmp = (ParserObjectRecordT*)malloc(sizeof(ParserObjectRecordT));
-        tmp->seq = (ParserObjectT*)malloc(res->n * sizeof(ParserObjectT));
+        tmp = AllocateBuffer(sizeof(ParserObjectRecordT));
+        tmp->seq = AllocateArray(res->n, sizeof(ParserObjectT));
         for (i = 0; i < res->n - 1; i++) {
             copyObjToObj(tmp->seq + i, res->seq + i);
             tmp->seq[i].parent = tmp;
@@ -855,11 +858,11 @@ struct recWithData mallocRecord(struct recWithData info, int isRoot)
     int i;
     if (!info.recPart->n) {info.pointerToData = 0; return info;}
     if (isRoot) {
-        info.pointerToData = (struct recordData*)malloc(sizeof(struct recordData));
+        info.pointerToData = AllocateBuffer(sizeof(struct recordData));
         info.pointerToData->parentData = 0;
     }
     info.pointerToData->data =
-        (struct objData*)calloc(info.recPart->n, sizeof(struct objData));
+        AllocateArray(info.recPart->n, sizeof(struct objData));
     for (i = 0; i < info.recPart->n; i++) {
         info.pointerToData->data[i].value = 0;
         info.pointerToData->data[i].parentData = info.pointerToData;
@@ -929,7 +932,7 @@ void setIntValue(struct objWithData info, const int64_t value)
         if (value < l || value > r) {
             genParseError(E_OUT_OF_RANGE);
         } else {
-            info.pointerToData->value = malloc(sizeof(value));
+            info.pointerToData->value = AllocateBuffer(sizeof(value));
             memcpy(info.pointerToData->value, &value, sizeof(value));
         }
     } else genParseError(E_VALUE_ALREADY_DEFINED);
@@ -953,7 +956,7 @@ void setFloatValue(struct objWithData info, const long double value)
             genParseError(E_INVALID_FRACTIONAL_PART);
             return;
         }
-        info.pointerToData->value = malloc(sizeof(value));
+        info.pointerToData->value = AllocateBuffer(sizeof(value));
         memcpy(info.pointerToData->value, &value, sizeof(value));
     } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
@@ -981,7 +984,7 @@ void setStrValue(struct objWithData info, const char* value)
                 return;
             }
         }
-        info.pointerToData->value = malloc(n + 1);
+        info.pointerToData->value = AllocateBuffer(n + 1);
         memcpy(info.pointerToData->value, value, n + 1);
     } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
@@ -997,7 +1000,7 @@ void autoGenInt(struct objWithData info)
         getIntLR(info, &l, &r);
         if (wasError()) return;
         tmp = GenerateRandInt(l, r);
-        info.pointerToData->value = malloc(sizeof(tmp));
+        info.pointerToData->value = AllocateBuffer(sizeof(tmp));
         memcpy(info.pointerToData->value, &tmp, sizeof(tmp));
     }
 }
@@ -1015,7 +1018,7 @@ void autoGenFloat(struct objWithData info)
         if (wasError()) return;
         getIntLR(info, &l, &r);
         rnd = GenerateRandFloat(l, r, d);
-        info.pointerToData->value = malloc(sizeof(rnd));
+        info.pointerToData->value = AllocateBuffer(sizeof(rnd));
         memcpy(info.pointerToData->value, &rnd, sizeof(rnd));
     }
 }
@@ -1032,7 +1035,7 @@ void autoGenStr(struct objWithData info)
         getIntLR(info, &l, &r);
         if (wasError()) return;
         rnd = GenerateRandInt(l, r);
-        res = (char*)malloc((size_t)rnd + 1);
+        res = AllocateBuffer((size_t)rnd + 1);
         for (i = 0; i < rnd; ++i) {
             res[i] = info.objPart->attrList[aChars].charSetStr
                 [GenerateRandInt(0, info.objPart->attrList[aChars].charNum - 1)];
@@ -1142,10 +1145,10 @@ struct recWithData byIndex(struct objWithData info, int index)
         return res;
     }
     if (!data->value) {
-        data->value = calloc(n, sizeof(struct recordData));
+        data->value = AllocateArray(n, sizeof(struct recordData));
         d = (struct recordData*)(data->value);
         for (i = 0; i < n; i++) {
-            tmp = (struct recordData*)malloc(sizeof(struct recordData));
+            tmp = AllocateBuffer(sizeof(struct recordData));
             memcpy(&(d[i]), tmp, sizeof(struct recordData));
             d[i].data = 0; d[i].parentData = data;
         }
@@ -1217,17 +1220,27 @@ void ParserValidateFormatDescription(
     ParserErrorT** error
 )
 {
-    initialize(data);
+    E4C_DECLARE_CONTEXT_STATUS
 
-    *error = NULL;
-    *tree = parseObjRecord();
-    if (wasError())
+    E4C_REUSE_CONTEXT
+    try
     {
-        *error = (ParserErrorT*)malloc(sizeof(ParserErrorT));
-        copyErrToErr(*error, lastError);
+        initialize(data);
+        *tree = parseObjRecord();
     }
+    catch (RuntimeException)
+    {
+        // TODO: Convert exceptions to errors, add message to error structure.
+        genParseError(E_EXCEPTION);
+    }
+    E4C_CLOSE_CONTEXT
 
     finalize();
+    if (wasError())
+    {
+        *error = AllocateBuffer(sizeof(ParserErrorT));
+        copyErrToErr(*error, lastError);
+    }
 }
 
 //-----------------------------for CATS web-server-----------------------------
@@ -1272,7 +1285,7 @@ static void debugReadFile(char* name)
         size_t oldSize = bufSize;
         if (!bufSize) bufSize++;
         bufSize += tmpLen;
-        buf1 = realloc(buf1, bufSize);
+        buf1 = ReallocateBuffer(buf1, bufSize);
         buf1[oldSize] = 0;
         strcat(buf1, tmp);
     }

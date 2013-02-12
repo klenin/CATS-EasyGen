@@ -63,7 +63,7 @@ ValidatorErrorT *ValidatorValidateString(char *input, char *formatDescription)
               ParserObjectRecordIteratorAdvance(it))
     {
         object = ParserObjectRecordIteratorDereference(it);
-        printf("objKind '%d'\n", object->objKind);
+        printf("objKind '%u'\n", object->objKind);
         printf("attrName '%s'\n", object->attrList[0].attrName);
         printf("strVal '%s'\n", object->attrList[0].strVal);
         printf("\n");

@@ -1,10 +1,11 @@
+#include "Allocator.h"
 #include "ParserObjectRecordIterator.h"
 
 static ParserObjectRecordIteratorT *ParserCreateObjectRecordIterator(
     ParserObjectRecordT *record
 )
 {
-    ParserObjectRecordIteratorT *iterator = malloc(
+    ParserObjectRecordIteratorT *iterator = AllocateBuffer(
         sizeof(ParserObjectRecordIteratorT));
     iterator->record = record;
     iterator->index = -1;

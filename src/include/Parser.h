@@ -66,7 +66,7 @@ struct objWithData
 
 typedef struct
 {
-    size_t line, pos;
+    int line, pos;
     int code;
 } ParserErrorT;
 
