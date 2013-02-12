@@ -1130,7 +1130,7 @@ struct objWithData byName(struct recWithData info, const char* name)
     return findObject(name, info, 0);
 }
 
-struct recWithData byIndex(struct objWithData info, int index)
+struct recWithData byIndex(struct objWithData info, int64_t index)
 {
     struct objData* data = info.pointerToData;
     ParserObjectT* a = info.objPart;
@@ -1236,7 +1236,7 @@ void ParserValidateFormatDescription(
     E4C_CLOSE_CONTEXT
 
     finalize();
-    if (wasError())
+    if (E4C_WAS_EXCEPTION_THROWN() || wasError())
     {
         *error = AllocateBuffer(sizeof(ParserErrorT));
         copyErrToErr(*error, lastError);

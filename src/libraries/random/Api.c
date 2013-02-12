@@ -21,9 +21,9 @@ int64_t GenerateRandInt(int64_t l, int64_t r)
 
 long double GenerateRandFloat(int64_t l, int64_t r, int64_t d)
 {
-    long double d10, x;
+    long double x;
     uint64_t len, tmp;
-    int64_t tmp1;
+    int64_t tmp1, d10;
     int i, k;
 
     if (r <= l) return (long double)l;

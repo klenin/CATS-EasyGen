@@ -5,6 +5,8 @@
 #include "Allocator.h"
 #include "ValidatorTokenizer.h"
 
+extern int yylex();
+
 // Internal function, defined to avoid linking with flex library.
 // Called by tokenizer when EOF is discovered.
 int yywrap(void)

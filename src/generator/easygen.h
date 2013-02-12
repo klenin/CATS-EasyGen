@@ -1,13 +1,16 @@
 #ifndef __EASYGEN_H__
 #define __EASYGEN_H__
 
-#include <string>
-#include <iostream>
-#include <map>
-#include <fstream>
-#include <sstream>
 #include <cmath>
+#include <fstream>
+#include <iostream>
 #include <iomanip>
+#include <map>
+#include <string>
+#include <sstream>
+// Header <cstdint> requires C++0x, so use it's old name.
+#include <stdint.h>
+
 
 using namespace std;
 
@@ -46,10 +49,10 @@ class prxObject
     prxObject(const objWithData& b) : a(b) {}
 public:
     prxRecord operator [] (int index);
-    int64_t operator = (const int64_t& value);
-    int operator = (const int& value);
-    string operator = (const string& value);
-    long double operator = (const long double& value);
+    prxObject& operator = (const int64_t& value);
+    prxObject& operator = (const int& value);
+    prxObject& operator = (const string& value);
+    prxObject& operator = (const long double& value);
     operator int64_t();
     operator int();
     operator long double();

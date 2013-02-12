@@ -53,7 +53,7 @@ ValidatorErrorT *ValidatorValidateString(char *input, char *formatDescription)
     }
     E4C_CLOSE_CONTEXT
 
-    if (ValidatorIsErrorRaised())
+    if (E4C_WAS_EXCEPTION_THROWN() || ValidatorIsErrorRaised())
     {
         return ValidatorGetLastError();
     }
@@ -100,6 +100,11 @@ ValidatorErrorT *ValidatorValidateFile(
         free(format);
     }
     E4C_CLOSE_CONTEXT
+
+    if (E4C_WAS_EXCEPTION_THROWN() || ValidatorIsErrorRaised())
+    {
+        return ValidatorGetLastError();
+    }
 
     return ValidatorGetLastError();
 }

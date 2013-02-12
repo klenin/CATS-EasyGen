@@ -7,8 +7,6 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstring>
-// Header <cstdint> requires C++0x, so use it's old name.
-#include <stdint.h>
 
 #include "Numerics.h"
 #include "Random.h"
@@ -52,26 +50,31 @@ char* testInfo::loadFormatFile(const string& fileName)
     return res1;
 }
 
+static int isspace_s(char c)
+{
+    return isspace(static_cast<unsigned char>(c));
+}
+
 testInfo::testInfo(int argc, char* argv[])
 {
     string s;
-    size_t i,j,k;
-    for (i = 1; i < (size_t)argc; i++) {
+    size_t i, j, k;
+    for (i = 1; i < static_cast<size_t>(argc); i++) {
         if (i > 1) s += " ";
         s += argv[i];
     }
     i = 0; k = s.length();
     while (i < k) {
-        while (i < k && isspace(s[i])) ++i;
+        while (i < k && isspace_s(s[i])) ++i;
         if (i >= k) break;
         j = i;
-        while (i < k && s[i] != '=' && !isspace(s[i])) ++i;
+        while (i < k && s[i] != '=' && !isspace_s(s[i])) ++i;
         if (i >= k) throw genError("illegal command line arguments");
         string val, name = s.substr(j, i-j);
-        while (i < k && isspace(s[i]) && s[i] != '=') ++i;
+        while (i < k && isspace_s(s[i]) && s[i] != '=') ++i;
         if (i >= k || s[i] != '=') throw genError("illegal command line arguments");
         ++i;
-        while (i < k && isspace(s[i])) ++i;
+        while (i < k && isspace_s(s[i])) ++i;
         if (i >= k) throw genError("illegal command line arguments");
         j = i;
         if (s[i] == '\'') {
@@ -90,7 +93,7 @@ testInfo::testInfo(int argc, char* argv[])
             }
             if (!ok) throw genError("illegal string value in conmand line");
         } else {
-            while (i < k && !isspace(s[i])) ++i;
+            while (i < k && !isspace_s(s[i])) ++i;
             val = s.substr(j, i-j);
         }
         if (params.find(name) != params.end())
@@ -209,36 +212,37 @@ prxRecord prxObject::operator [] (int index)
     return prxRecord(tmp);
 }
 
-int64_t prxObject::operator = (const int64_t& value)
+prxObject& prxObject::operator = (const int64_t& value)
 {
     if (a.objPart->objKind != oInteger)
         throw genError("trying to assign integer to non-int object");
     setIntValue(a, value);
     genError::processParseError();
-    return value;
+    return *this;
 }
 
-int prxObject::operator = (const int& value)
+prxObject& prxObject::operator = (const int& value)
 {
-    return *this = (int64_t)value;
+    *this = static_cast<int64_t>(value);
+    return *this;
 }
 
-long double prxObject::operator = (const long double& value)
+prxObject& prxObject::operator = (const long double& value)
 {
     if (a.objPart->objKind != oFloat)
         throw genError("trying to assign float to non-float object");
     setFloatValue(a, value);
     genError::processParseError();
-    return value;
+    return *this;
 }
 
-string prxObject::operator = (const string& value)
+prxObject& prxObject::operator = (const string& value)
 {
     if (a.objPart->objKind != oString)
         throw genError("trying to assign string to non-string object");
     setStrValue(a, value.c_str());
     genError::processParseError();
-    return value;
+    return *this;
 }
 
 prxObject::operator int64_t()

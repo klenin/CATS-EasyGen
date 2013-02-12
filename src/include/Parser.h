@@ -117,7 +117,7 @@ void setIntValue(struct objWithData info, const int64_t value);
 void setFloatValue(struct objWithData info, const long double value);
 void setStrValue(struct objWithData info, const char* value); // copy value
 
-struct recWithData byIndex(struct objWithData info, int index);
+struct recWithData byIndex(struct objWithData info, int64_t index);
 struct objWithData byName(struct recWithData info, const char* name);
 
 void autoGenRecord(struct recWithData info);
