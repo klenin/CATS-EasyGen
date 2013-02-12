@@ -1,7 +1,7 @@
-#ifndef __ITERATOR_H__
-#define __ITERATOR_H__
+#ifndef __PARSER_OBJECT_RECORD_ITERATOR_H__
+#define __PARSER_OBJECT_RECORD_ITERATOR_H__
 
-#include "parser.h"
+#include "Parser.h"
 
 typedef struct
 {
@@ -18,4 +18,4 @@ ParserObjectT *ParserObjectRecordIteratorDereference(
 );
 void ParserObjectRecordIteratorAdvance(ParserObjectRecordIteratorT *iterator);
 
-#endif // __ITERATOR_H__
+#endif // __PARSER_OBJECT_RECORD_ITERATOR_H__

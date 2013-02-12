@@ -10,9 +10,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "parser.h"
-#include "random.h"
-#include "error.h"
+#include "Random.h"
+#include "Parser.h"
+#include "ParserError.h"
 
 #define charNumber 256
 #define tmpBufSize 10240

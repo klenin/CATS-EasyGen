@@ -1,5 +1,5 @@
-#ifndef __ERROR_H__
-#define __ERROR_H__
+#ifndef __PARSER_ERROR_H__
+#define __PARSER_ERROR_H__
 
 // E_ means error, B_ means bug.
 enum parseErrorCode
@@ -117,4 +117,4 @@ struct _errordesc {
     { E_UNKNOWN_ERROR, "unknown error" },
 };
 
-#endif // __ERROR_H__
+#endif // __PARSER_ERROR_H__

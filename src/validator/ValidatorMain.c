@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "parser.h"
-#include "iterator.h"
-
 #include "Allocator.h"
 #include "File.h"
+#include "Parser.h"
+#include "ParserObjectRecordIterator.h"
 #include "ValidatorErrors.h"
 #include "ValidatorExceptions.h"
 #include "ValidatorTokenizer.h"
