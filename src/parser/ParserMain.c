@@ -19,28 +19,7 @@
 #define charNumber 256
 #define tmpBufSize 10240
 
-#define objCount 7
-#define allAttrCount 6
 #define priorityNumber 3
-
-enum attrKind {aName, aRange, aDigits, aChars, aLength, aLenRange};
-
-enum attrValType {vIdent, vInt, vIntRange, vCharSet};
-
-static const char* objStr[objCount] = {"newline", "softline", "integer", "float",
-    "string", "seq", "end"};
-
-static const char* attrStr[allAttrCount] = {"name", "range", "digits",
-    "chars", "length", "lenrange"};
-
-static int attrByObj[objCount][allAttrCount] = {
-    {0,0,0,0,0,0},{0,0,0,0,0,0},{1,1,0,0,0,0},
-    {1,1,1,0,0,0},{1,0,0,1,0,1},{1,0,0,0,1,0},{0,0,0,0,0,0}
-};
-
-static int attrTypeByKind[allAttrCount] = {
-    vIdent, vIntRange, vInt, vCharSet, vInt, vIntRange
-};
 
 enum tokenType {ttDelim, ttObject, ttAttrName, ttIdentifier,
     ttInteger, ttCharSet};
@@ -109,7 +88,10 @@ void attrListDestructor(struct attr* attrList)
 {
     int i;
     if (!attrList) return;
-    for (i = 0; i < allAttrCount; i++) attrDestructor1(attrList + i);
+    for (i = 0; i < PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT; i++)
+    {
+        attrDestructor1(attrList + i);
+    }
     free(attrList);
 }
 
@@ -166,7 +148,7 @@ static void allocWithCopyObjRecord(ParserObjectRecordT** a, ParserObjectRecordT*
     for (i = 0; i < b->n; i++) {
         copyObjToObj((*a)->seq + i, b->seq + i);
         (*a)->seq[i].parent = *a;
-        if ((*a)->seq[i].objKind == oSeq) (*a)->seq[i].rec->parent = *a;
+        if ((*a)->seq[i].objKind == PARSER_OBJECT_KIND_SEQUENCE) (*a)->seq[i].rec->parent = *a;
     }
 }
 
@@ -196,7 +178,8 @@ static void copyObjToObj(ParserObjectT* a, ParserObjectT* b)
     a->objKind = b->objKind;
     a->parent = b->parent;
     allocWithCopyObjRecord(&(a->rec), b->rec);
-    allocWithCopyAttrList(&(a->attrList), b->attrList, allAttrCount);
+    allocWithCopyAttrList(&(a->attrList), b->attrList,
+        PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT);
 }
 
 static void copyErrToErr(ParserErrorT* a, ParserErrorT* b)
@@ -206,13 +189,16 @@ static void copyErrToErr(ParserErrorT* a, ParserErrorT* b)
 
 ////-------------------------------------utilities-------------------------------
 
-int getAttrCount(int objKind)
+int getAttrCount(ParserObjectKindT objKind)
 {
     int i, res = 0;
-    if (objKind < 0 || objKind > objCount) return 0;
 
+    if (objKind < PARSER_OBJECT_KINDS_COUNT) {
+        for (i = 0; i < PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT; i++) {
+            if (g_ParserObjectAttrKindIsValidForObjectKind[objKind][i]) res++;
+        }
+    }
 
-    for (i = 0; i < allAttrCount; i++) if (attrByObj[objKind][i]) res++;
     return res;
 }
 
@@ -307,16 +293,24 @@ struct objWithData findObject(const char* name, struct recWithData rec, int goUp
 {
     int i;
     struct objWithData res;
+    ParserObjectT* object;
+    char* attrValue;
+
     while (rec.recPart) {
         for (i = 0; i < rec.recPart->n; i++) {
-            if (attrByObj[rec.recPart->seq[i].objKind][aName])
-                if (!strcmp(name, rec.recPart->seq[i].attrList[aName].strVal)) {
-                    res.objPart = &(rec.recPart->seq[i]);
+            object = &(rec.recPart->seq[i]);
+            if (g_ParserObjectAttrKindIsValidForObjectKind
+                    [object->objKind][PARSER_OBJECT_ATTR_NAME])
+            {
+                attrValue = object->attrList[PARSER_OBJECT_ATTR_NAME].strVal;
+                if (!strcmp(name, attrValue)) {
+                    res.objPart = object;
                     if (rec.pointerToData) {
                         res.pointerToData = &(rec.pointerToData->data[i]);
                     }
                     return res;
                 }
+            }
         }
         if (!goUp) break;
         rec.recPart = rec.recPart->parent;
@@ -400,16 +394,16 @@ static void moveToNextToken()
                 } else fin = 1;
                 if (fin) {
                     curToken = newToken(line1, pos1, oldPos, bufPos);
-                    for (i = 0; i < objCount; i++)
-                        if (bufPos-oldPos == strlen(objStr[i]) &&
-                            !strncmp(buf+oldPos, objStr[i], bufPos-oldPos)) break;
-                    if (i < objCount) {
+                    for (i = 0; i < PARSER_OBJECT_KINDS_COUNT; i++)
+                        if (bufPos-oldPos == strlen(g_ParserObjectKind2Str[i]) &&
+                            !strncmp(buf+oldPos, g_ParserObjectKind2Str[i], bufPos-oldPos)) break;
+                    if (i < PARSER_OBJECT_KINDS_COUNT) {
                         curToken->type = ttObject; curToken->value = i;
                     } else {
-                        for (i = 0; i < allAttrCount; i++)
-                            if (bufPos-oldPos == strlen(attrStr[i]) &&
-                                !strncmp(buf+oldPos, attrStr[i], bufPos-oldPos)) break;
-                        if (i < allAttrCount) {
+                        for (i = 0; i < PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT; i++)
+                            if (bufPos-oldPos == strlen(g_ParserObjectAttrKind2Str[i]) &&
+                                !strncmp(buf+oldPos, g_ParserObjectAttrKind2Str[i], bufPos-oldPos)) break;
+                        if (i < PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT) {
                             curToken->type = ttAttrName; curToken->value = i;
                         } else {
                             curToken->type = ttIdentifier; curToken->value = -1;
@@ -498,8 +492,8 @@ static int chkCurToken(char ch)
 static int attrFind(char *name)
 {
     int i;
-    for (i = 0; i < allAttrCount; i++)
-        if (!strcmp(attrStr[i], name)) return i;
+    for (i = 0; i < PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT; i++)
+        if (!strcmp(g_ParserObjectAttrKind2Str[i], name)) return i;
     return -1;
 }
 
@@ -544,7 +538,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
                 tmp.pointerToData = 0; tmp.recPart = curSeq;
                 varObj = findObject(res->varName, tmp, 1).objPart;
                 if (!varObj) genParseError(E_UNKNOWN_OBJECT);
-                if (!wasError() && varObj->objKind != oInteger) genParseError(E_INTEGER_OBJECT_EXPECTED);
+                if (!wasError() && varObj->objKind != PARSER_OBJECT_KIND_INTEGER) genParseError(E_INTEGER_OBJECT_EXPECTED);
                 if (wasError()) {exprDestructor(res); return 0;}
                 moveToNextToken();
                 if (wasError()) {exprDestructor(res); return 0;}
@@ -669,20 +663,20 @@ static struct attr* parseAttr(ParserObjectRecordT* curSeq)
     }
 
     if (!curToken) return NULL;
-    switch (attrTypeByKind[i]) {
-        case vIdent:
+    switch (g_ParserObjectKind2AttrValueKind[i]) {
+        case PARSER_OBJECT_ATTR_VALUE_IDENTIFIER:
             res->strVal = parseSingleToken(ttIdentifier);
             if (!res->strVal) {attrDestructor(res); return NULL;}
             break;
-        case vInt:
+        case PARSER_OBJECT_ATTR_VALUE_INTEGER:
             res->exVal1 = parseExpression(curSeq);
             if (!res->exVal1) {attrDestructor(res); return NULL;}
             break;
-        case vIntRange:
+        case PARSER_OBJECT_ATTR_VALUE_INTEGER_RANGE:
             parseIntRange(&res->exVal1, &res->exVal2, curSeq);
             if (!res->exVal1) {attrDestructor(res); return NULL;}
             break;
-        case vCharSet:
+        case PARSER_OBJECT_ATTR_VALUE_CHARSET:
             res->strVal = parseSingleToken(ttCharSet);
             if (!res->strVal) {attrDestructor(res); return NULL;}
             if (isInCharSet(0, res->strVal) < 0) {
@@ -708,16 +702,19 @@ static struct attr* parseAttr(ParserObjectRecordT* curSeq)
     return res;
 }
 
-static struct attr* parseAttrList(int objKind, ParserObjectRecordT* curSeq)
+static struct attr* parseAttrList(
+    ParserObjectKindT objKind,
+    ParserObjectRecordT* curSeq
+)
 {
     //it should eat semicolons too
     struct attr *res = 0;
     struct attr *curAttr;
     int bad = 0, i, n = 0;
-    int vis[allAttrCount];
+    int vis[PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT];
 
-    res = AllocateArray(allAttrCount, sizeof(struct attr));
-    memset(res, 0, allAttrCount * sizeof(struct attr));
+    res = AllocateArray(PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT,
+        sizeof(struct attr));
     memset(vis, 0, sizeof(vis));
 
     while ((curAttr = parseAttr(curSeq))) {
@@ -727,7 +724,7 @@ static struct attr* parseAttrList(int objKind, ParserObjectRecordT* curSeq)
             attrDestructor(curAttr); curAttr = 0;
             bad = 1; break;
         }
-        if (!attrByObj[objKind][i]) {
+        if (!g_ParserObjectAttrKindIsValidForObjectKind[objKind][i]) {
             genParseError(E_INVALID_ATTRIBUTE);
             attrDestructor(curAttr); curAttr = 0;
             bad = 1; break;
@@ -758,7 +755,7 @@ static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent);
 
 static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
 {
-    int objKind;
+    ParserObjectKindT objKind;
     ParserObjectT* res;
     struct attr* attrList;
     char* name;
@@ -769,12 +766,13 @@ static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
         genParseError(E_OBJECT_KIND_EXPECTED);
         return NULL;
     }
-    objKind = (int)curToken->value; moveToNextToken();
+    objKind = curToken->value;
+    moveToNextToken();
 
     attrList = parseAttrList(objKind, curSeq);
 
     if (attrList) {
-        name = attrList[aName].strVal;
+        name = attrList[PARSER_OBJECT_ATTR_NAME].strVal;
         if (name) { // if name doesn't exist, than it's unnamed objKind
             tmp.pointerToData = 0; tmp.recPart = curSeq;
             if (findObject(name, tmp, 0).objPart) {
@@ -785,11 +783,14 @@ static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
         }
     }
 
-    if (attrList || objKind == oEnd ||
-        objKind == oNewLine || objKind == oSoftLine) {
+    if (attrList ||
+        objKind == PARSER_OBJECT_KIND_END ||
+        objKind == PARSER_OBJECT_KIND_NEWLINE ||
+        objKind == PARSER_OBJECT_KIND_SOFTLINE)
+    {
             res = AllocateBuffer(sizeof(ParserObjectT));
             res->attrList = attrList; res->objKind = objKind;
-            if (objKind == oSeq) {
+            if (objKind == PARSER_OBJECT_KIND_SEQUENCE) {
                 res->rec = parseObjRecord1(curSeq);
                 if (!res->rec) {objDestructor(res); return 0;}
             } else res->rec = 0;
@@ -812,7 +813,7 @@ static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent)
     res->n = 0; res->seq = 0; res->parent = parent;
 
     while ((curObj = parseNextObject(res))) {
-        if (curObj->objKind == oEnd) {
+        if (curObj->objKind == PARSER_OBJECT_KIND_END) {
             if (!parent) {
                 genParseError(E_UNEXPECTED_END);
             } else {
@@ -827,13 +828,13 @@ static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent)
         for (i = 0; i < res->n - 1; i++) {
             copyObjToObj(tmp->seq + i, res->seq + i);
             tmp->seq[i].parent = tmp;
-            if (tmp->seq[i].objKind == oSeq) tmp->seq[i].rec->parent = tmp;
+            if (tmp->seq[i].objKind == PARSER_OBJECT_KIND_SEQUENCE) tmp->seq[i].rec->parent = tmp;
         }
         tmp->parent = res->parent; tmp->n = res->n;
         res->n--; objRecordDestructor(res);
         copyObjToObj(tmp->seq + tmp->n - 1, curObj);
         tmp->seq[tmp->n - 1].parent = tmp;
-        if (tmp->seq[tmp->n - 1].objKind == oSeq)
+        if (tmp->seq[tmp->n - 1].objKind == PARSER_OBJECT_KIND_SEQUENCE)
             tmp->seq[tmp->n - 1].rec->parent = tmp;
         res = tmp;
         objDestructor(curObj);
@@ -872,18 +873,24 @@ struct recWithData mallocRecord(struct recWithData info, int isRoot)
 
 static void getIntLR(struct objWithData info, int64_t* l, int64_t* r)
 {
-    *l = evaluate(info.objPart->attrList[aRange].exVal1, info);
-    if (info.objPart->attrList[aRange].exVal2)
-        *r = evaluate(info.objPart->attrList[aRange].exVal2, info);
+    *l = evaluate(info.objPart->attrList[PARSER_OBJECT_ATTR_RANGE].exVal1,
+        info);
+    if (info.objPart->attrList[PARSER_OBJECT_ATTR_RANGE].exVal2)
+        *r = evaluate(info.objPart->attrList[PARSER_OBJECT_ATTR_RANGE].exVal2,
+            info);
     else *r = *l;
 }
 
 int64_t getFloatDig(struct objWithData info)
 {
-    return evaluate(info.objPart->attrList[aDigits].exVal1, info);
+    return evaluate(
+        info.objPart->attrList[PARSER_OBJECT_ATTR_DIGITS].exVal1, info);
 }
 
-static int isObjectValid(struct objWithData* info, enum objKind expectedKind)
+static int isObjectValid(
+    struct objWithData* info,
+    ParserObjectKindT expectedKind
+)
 {
     if (info->objPart->objKind != expectedKind) {
         genParseError(E_OBJECT_KIND_MISMATCH_GET);
@@ -898,7 +905,7 @@ static int isObjectValid(struct objWithData* info, enum objKind expectedKind)
 
 int64_t getIntValue(struct objWithData info)
 {
-    if (isObjectValid(&info, oInteger)) {
+    if (isObjectValid(&info, PARSER_OBJECT_KIND_INTEGER)) {
         return *((int64_t*)info.pointerToData->value);
     }
     return 0;
@@ -906,7 +913,7 @@ int64_t getIntValue(struct objWithData info)
 
 long double getFloatValue(struct objWithData info)
 {
-    if (isObjectValid(&info, oFloat)) {
+    if (isObjectValid(&info, PARSER_OBJECT_KIND_FLOAT)) {
         return *((long double*)info.pointerToData->value);
     }
     return 0;
@@ -914,7 +921,7 @@ long double getFloatValue(struct objWithData info)
 
 char* getStrValue(struct objWithData info)
 {
-    if (isObjectValid(&info, oString)) {
+    if (isObjectValid(&info, PARSER_OBJECT_KIND_STRING)) {
         return (char*)(info.pointerToData->value);
     }
     return NULL;
@@ -922,7 +929,7 @@ char* getStrValue(struct objWithData info)
 
 void setIntValue(struct objWithData info, const int64_t value)
 {
-    if (info.objPart->objKind != oInteger) {
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_INTEGER) {
         genParseError(E_ASSIGN_NON_INT);
         return;
     }
@@ -940,7 +947,7 @@ void setIntValue(struct objWithData info, const int64_t value)
 
 void setFloatValue(struct objWithData info, const long double value)
 {
-    if (info.objPart->objKind != oFloat) {
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_FLOAT) {
         genParseError(E_ASSIGN_NON_FLOAT);
         return;
     }
@@ -951,7 +958,8 @@ void setFloatValue(struct objWithData info, const long double value)
             genParseError(E_OUT_OF_RANGE);
             return;
         }
-        d = evaluate(info.objPart->attrList[aDigits].exVal1, info);
+        d = evaluate(
+            info.objPart->attrList[PARSER_OBJECT_ATTR_DIGITS].exVal1, info);
         if (d < 0 || d > LDBL_DIG) {
             genParseError(E_INVALID_FRACTIONAL_PART);
             return;
@@ -965,7 +973,7 @@ void setStrValue(struct objWithData info, const char* value)
 {
     int32_t i, n;
     int64_t l, r;
-    if (info.objPart->objKind != oString) {
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_STRING) {
         genParseError(E_ASSIGN_NON_STRING);
         return;
     }
@@ -979,7 +987,7 @@ void setStrValue(struct objWithData info, const char* value)
         }
         for (i = 0; i < n; ++i) {
             int index = value[i];
-            if (!info.objPart->attrList[aChars].valid[index]) {
+            if (!info.objPart->attrList[PARSER_OBJECT_ATTR_CHARS].valid[index]) {
                 genParseError(E_INVALID_CHARS);
                 return;
             }
@@ -992,7 +1000,7 @@ void setStrValue(struct objWithData info, const char* value)
 void autoGenInt(struct objWithData info)
 {
     int64_t l, r, tmp;
-    if (info.objPart->objKind != oInteger) {
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_INTEGER) {
         genParseError(E_GENERATE_NON_INT);
         return;
     }
@@ -1007,14 +1015,15 @@ void autoGenInt(struct objWithData info)
 
 void autoGenFloat(struct objWithData info)
 {
-    if (info.objPart->objKind != oFloat) {
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_FLOAT) {
         genParseError(E_GENERATE_NON_FLOAT);
         return;
     }
     if (!info.pointerToData->value) {
         long double rnd;
         int64_t l, r;
-        int64_t d = evaluate(info.objPart->attrList[aDigits].exVal1, info)  ;
+        int64_t d = evaluate(
+            info.objPart->attrList[PARSER_OBJECT_ATTR_DIGITS].exVal1, info);
         if (wasError()) return;
         getIntLR(info, &l, &r);
         rnd = GenerateRandFloat(l, r, d);
@@ -1027,7 +1036,7 @@ void autoGenStr(struct objWithData info)
 {
     char* res;
     int64_t i, l, r, rnd;
-    if (info.objPart->objKind != oString) {
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_STRING) {
         genParseError(E_GENERATE_NON_STRING);
         return;
     }
@@ -1037,8 +1046,8 @@ void autoGenStr(struct objWithData info)
         rnd = GenerateRandInt(l, r);
         res = AllocateBuffer((size_t)rnd + 1);
         for (i = 0; i < rnd; ++i) {
-            res[i] = info.objPart->attrList[aChars].charSetStr
-                [GenerateRandInt(0, info.objPart->attrList[aChars].charNum - 1)];
+            res[i] = info.objPart->attrList[PARSER_OBJECT_ATTR_CHARS].charSetStr
+                [GenerateRandInt(0, info.objPart->attrList[PARSER_OBJECT_ATTR_CHARS].charNum - 1)];
         }
         res[rnd] = 0;
         info.pointerToData->value = res;
@@ -1047,17 +1056,22 @@ void autoGenStr(struct objWithData info)
 
 int getSeqLen(struct objWithData info)
 {
-    if (info.objPart->objKind != oSeq) genParseError(E_NOT_A_SEQUENCE);
-    return (int)evaluate(info.objPart->attrList[aLength].exVal1, info);
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_SEQUENCE)
+    {
+        genParseError(E_NOT_A_SEQUENCE);
+    }
+    return (int)evaluate(
+        info.objPart->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
 }
 
 void autoGenSeq(struct objWithData info)
 {
     struct recWithData rnd;
     int i;
-    int64_t n = evaluate(info.objPart->attrList[aLength].exVal1, info);
+    int64_t n = evaluate(
+        info.objPart->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
     if (wasError()) return;
-    if (info.objPart->objKind != oSeq) {
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_SEQUENCE) {
         genParseError(E_GENERATE_NON_SEQUENCE);
         return;
     }
@@ -1072,7 +1086,7 @@ void autoGenSeq(struct objWithData info)
 void autoGenRecord(struct recWithData info)
 {
     int i;
-    int objk;
+    ParserObjectKindT objk;
     struct objWithData tmp;
     if (!info.pointerToData->data) {
         info = mallocRecord(info, 0);
@@ -1081,12 +1095,14 @@ void autoGenRecord(struct recWithData info)
         tmp.objPart = &(info.recPart->seq[i]);
         tmp.pointerToData = &(info.pointerToData->data[i]);
         objk = (info.recPart->seq[i]).objKind;
-        if (objk != oSeq && tmp.pointerToData->value) continue;
+        if (objk != PARSER_OBJECT_KIND_SEQUENCE && tmp.pointerToData->value) continue;
         switch (objk) {
-            case oInteger: autoGenInt(tmp); break;
-            case oFloat: autoGenFloat(tmp); break;
-            case oString: autoGenStr(tmp); break;
-            case oSeq: autoGenSeq(tmp); break;
+            case PARSER_OBJECT_KIND_INTEGER: autoGenInt(tmp); break;
+            case PARSER_OBJECT_KIND_FLOAT: autoGenFloat(tmp); break;
+            case PARSER_OBJECT_KIND_STRING: autoGenStr(tmp); break;
+            case PARSER_OBJECT_KIND_SEQUENCE: autoGenSeq(tmp); break;
+            default:
+                genParseError(E_UNEXPECTED_OBJECT_KIND);
         }
     }
 }
@@ -1136,7 +1152,7 @@ struct recWithData byIndex(struct objWithData info, int64_t index)
     ParserObjectT* a = info.objPart;
     struct recWithData res;
     struct recordData* d, *tmp;
-    int n = (int)evaluate(a->attrList[aLength].exVal1, info);
+    int n = (int)evaluate(a->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
     int i;
     res.pointerToData = 0; res.recPart = 0;
     if (wasError()) return res;
@@ -1164,11 +1180,12 @@ void destroySeqData(struct objWithData info)
 {
     struct recWithData rnd;
     int i, n;
-    if (info.objPart->objKind != oSeq) {
+    if (info.objPart->objKind != PARSER_OBJECT_KIND_SEQUENCE) {
         genParseError(E_DESTROY_NON_SEQUENCE);
         return;
     }
-    n = (int)evaluate(info.objPart->attrList[aLength].exVal1, info);
+    n = (int)evaluate(
+        info.objPart->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
     if (wasError()) return;
     if (!info.pointerToData || !info.pointerToData->value) return;
     for (i = 0; i < n; i++) {
@@ -1188,12 +1205,16 @@ void destroyRecData(struct recWithData info)
         tmp.pointerToData = &(info.pointerToData->data[i]);
         if (tmp.pointerToData) {
             switch ((info.recPart->seq[i]).objKind) {
-                case oInteger: case oFloat: case oString:
+                case PARSER_OBJECT_KIND_INTEGER:
+                case PARSER_OBJECT_KIND_FLOAT:
+                case PARSER_OBJECT_KIND_STRING:
                     free(tmp.pointerToData->value);
                     break;
-                case oSeq:
+                case PARSER_OBJECT_KIND_SEQUENCE:
                     destroySeqData(tmp);
                     break;
+                default:
+                    genParseError(E_UNEXPECTED_OBJECT_KIND);
           }
       }
 }
@@ -1292,17 +1313,12 @@ static void debugReadFile(char* name)
     fclose(input);
 }
 
-static void debugObjKindPrint(int objKind)
+static void debugObjKindPrint(ParserObjectKindT objKind)
 {
-    switch(objKind) {
-        case 0: printf("newline"); break;
-        case 1: printf("softline"); break;
-        case 2: printf("integer"); break;
-        case 3: printf("float"); break;
-        case 4: printf("string"); break;
-        case 5: printf("seq"); break;
-        case 6: printf("end"); break;
-        default: printf("BAD OBJECT!");
+    if (objKind < PARSER_OBJECT_KINDS_COUNT) {
+        printf(g_ParserObjectKind2Str[objKind]);
+    } else {
+        printf("BAD OBJECT!");
     }
 }
 
@@ -1329,23 +1345,25 @@ static void debugPrintobjRecord(ParserObjectRecordT* a, int indent)
         for (j = 0; j < indent; j++) printf(" ");
         co = &(a->seq[k]);
         debugObjKindPrint(co->objKind); printf(" ");
-        for (i = 0; i < allAttrCount; i++) if (co->attrList[i].attrName) {
-            if (i) printf(", ");
-            printf("%s=",co->attrList[i].attrName);
-            if (co->attrList[i].strVal) {
-                if (!strncmp(co->attrList[i].attrName,"chars",5))
-                    debugCharSetPrint(co->attrList[i].strVal);
-                else printf("%s",co->attrList[i].strVal);
+        for (i = 0; i < PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT; i++) {
+            if (co->attrList[i].attrName) {
+                if (i) printf(", ");
+                printf("%s=",co->attrList[i].attrName);
+                if (co->attrList[i].strVal) {
+                    if (!strncmp(co->attrList[i].attrName,"chars",5))
+                        debugCharSetPrint(co->attrList[i].strVal);
+                    else printf("%s",co->attrList[i].strVal);
+                }
+                else if (co->attrList[i].exVal2) {
+                    printf("[");
+                    debugPrintExpr(co->attrList[i].exVal1);
+                    printf(",");
+                    debugPrintExpr(co->attrList[i].exVal2);
+                    printf("]");
+                } else if (co->attrList[i].exVal1)
+                    debugPrintExpr(co->attrList[i].exVal1);
+                else printf("!!!!!!!");
             }
-            else if (co->attrList[i].exVal2) {
-                printf("[");
-                debugPrintExpr(co->attrList[i].exVal1);
-                printf(",");
-                debugPrintExpr(co->attrList[i].exVal2);
-                printf("]");
-            } else if (co->attrList[i].exVal1)
-                debugPrintExpr(co->attrList[i].exVal1);
-            else printf("!!!!!!!");
         }
         printf("\n");
         if (co->rec) {

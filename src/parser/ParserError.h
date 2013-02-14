@@ -56,6 +56,7 @@ enum parseErrorCode
     E_DESTROY_NON_SEQUENCE,
     E_INVALID_INDEX,
     E_ZERO_DIVISION,
+    E_UNEXPECTED_OBJECT_KIND,
 
     E_EXCEPTION,
 
@@ -115,6 +116,7 @@ struct _errordesc {
     { E_DESTROY_NON_SEQUENCE, "attempt to destroy non-sequence object as sequence" },
     { E_INVALID_INDEX, "sequence index is out of range" },
     { E_ZERO_DIVISION, "attempt to divide by zero" },
+    { E_UNEXPECTED_OBJECT_KIND, "unexpected object kind" },
 
     { E_EXCEPTION, "exception" },
 

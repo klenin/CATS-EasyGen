@@ -8,8 +8,12 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "Numerics.h"
-#include "Random.h"
+extern "C"
+{
+    #include "Numerics.h"
+    #include "ParserObjectAttributes.h"
+    #include "Random.h"
+}
 
 #include "easygen.h"
 
@@ -147,15 +151,17 @@ void testInfo::paramsToVars()
             objWithData tmp = findObject(i->first.c_str(), desc.a, 0);
             if (tmp.objPart) {
                 switch (tmp.objPart->objKind) {
-                    case oInteger:
+                    case PARSER_OBJECT_KIND_INTEGER:
                         desc.operator [](i->first) = getIntParam(i->first);
                         break;
-                    case oFloat:
+                    case PARSER_OBJECT_KIND_FLOAT:
                         desc.operator [](i->first) = getFloatParam(i->first);
                         break;
-                    case oString:
+                    case PARSER_OBJECT_KIND_STRING:
                         desc.operator [](i->first) = i->second;
                         break;
+                    default:
+                        throw genError("unexpected object kind");
                 }
                 genError::processParseError();
             }
@@ -214,7 +220,7 @@ prxRecord prxObject::operator [] (int index)
 
 prxObject& prxObject::operator = (const int64_t& value)
 {
-    if (a.objPart->objKind != oInteger)
+    if (a.objPart->objKind != PARSER_OBJECT_KIND_INTEGER)
         throw genError("trying to assign integer to non-int object");
     setIntValue(a, value);
     genError::processParseError();
@@ -229,7 +235,7 @@ prxObject& prxObject::operator = (const int& value)
 
 prxObject& prxObject::operator = (const long double& value)
 {
-    if (a.objPart->objKind != oFloat)
+    if (a.objPart->objKind != PARSER_OBJECT_KIND_FLOAT)
         throw genError("trying to assign float to non-float object");
     setFloatValue(a, value);
     genError::processParseError();
@@ -238,7 +244,7 @@ prxObject& prxObject::operator = (const long double& value)
 
 prxObject& prxObject::operator = (const string& value)
 {
-    if (a.objPart->objKind != oString)
+    if (a.objPart->objKind != PARSER_OBJECT_KIND_STRING)
         throw genError("trying to assign string to non-string object");
     setStrValue(a, value.c_str());
     genError::processParseError();
@@ -247,7 +253,7 @@ prxObject& prxObject::operator = (const string& value)
 
 prxObject::operator int64_t()
 {
-    if (a.objPart->objKind != oInteger)
+    if (a.objPart->objKind != PARSER_OBJECT_KIND_INTEGER)
         throw genError("trying to get integer from non-int object");
     int64_t res = getIntValue(a);
     genError::processParseError();
@@ -261,7 +267,7 @@ prxObject::operator int()
 
 prxObject::operator long double()
 {
-    if (a.objPart->objKind != oFloat)
+    if (a.objPart->objKind != PARSER_OBJECT_KIND_FLOAT)
         throw genError("trying to get float from non-float object");
     long double res = getFloatValue(a);
     genError::processParseError();
@@ -270,7 +276,7 @@ prxObject::operator long double()
 
 prxObject::operator string()
 {
-    if (a.objPart->objKind != oString)
+    if (a.objPart->objKind != PARSER_OBJECT_KIND_STRING)
         throw genError("trying to get string from non-string object");
     string res(getStrValue(a));
     genError::processParseError();
@@ -280,26 +286,30 @@ prxObject::operator string()
 void prxObject::print()
 {
     if ((!a.pointerToData || !a.pointerToData->value) &&
-        a.objPart->objKind != oNewLine && a.objPart->objKind != oSoftLine)
+        a.objPart->objKind != PARSER_OBJECT_KIND_NEWLINE &&
+        a.objPart->objKind != PARSER_OBJECT_KIND_SOFTLINE)
             throw genError("uninitialized data while printing");
     int objk = a.objPart->objKind;
     switch (objk) {
-        case oNewLine: case oSoftLine:
+        case PARSER_OBJECT_KIND_NEWLINE:
+        case PARSER_OBJECT_KIND_SOFTLINE:
             cout << endl; wasSpaceChar = true;
             break;
-        case oInteger: case oFloat: case oString:
+        case PARSER_OBJECT_KIND_INTEGER:
+        case PARSER_OBJECT_KIND_FLOAT:
+        case PARSER_OBJECT_KIND_STRING:
             if (!wasSpaceChar) cout << defaultSpaceChar;
-            if (objk == oInteger) {
+            if (objk == PARSER_OBJECT_KIND_INTEGER) {
                 cout << getIntValue(a);
-            } else if (objk == oString) {
+            } else if (objk == PARSER_OBJECT_KIND_STRING) {
                 cout << getStrValue(a);
-            } else if (objk == oFloat) {
+            } else if (objk == PARSER_OBJECT_KIND_FLOAT) {
                 cout << fixed << setprecision(getFloatDig(a)) << getFloatValue(a);
             }
             genError::processParseError();
             wasSpaceChar = 0;
             break;
-        case oSeq:
+        case PARSER_OBJECT_KIND_SEQUENCE:
             int n = getSeqLen(a);
             for (int i = 1; i <= n; i++) {
                 prxRecord tmp(byIndex(a, i));
@@ -313,11 +323,13 @@ void prxObject::print()
 void prxObject::autoGen()
 {
     switch (a.objPart->objKind) {
-        case oNewLine: case oSoftLine: cout << endl; break;
-        case oInteger: autoGenInt(a); break;
-        case oFloat: autoGenFloat(a); break;
-        case oString: autoGenStr(a); break;
-        case oSeq: autoGenSeq(a); break;
+        case PARSER_OBJECT_KIND_NEWLINE: case PARSER_OBJECT_KIND_SOFTLINE: cout << endl; break;
+        case PARSER_OBJECT_KIND_INTEGER: autoGenInt(a); break;
+        case PARSER_OBJECT_KIND_FLOAT: autoGenFloat(a); break;
+        case PARSER_OBJECT_KIND_STRING: autoGenStr(a); break;
+        case PARSER_OBJECT_KIND_SEQUENCE: autoGenSeq(a); break;
+        default:
+            throw genError("unexpected object kind");
     }
 }
 

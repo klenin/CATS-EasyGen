@@ -15,7 +15,7 @@
 using namespace std;
 
 extern "C" {
-    #include "parser.h"
+    #include "Parser.h"
 }
 
 class genError

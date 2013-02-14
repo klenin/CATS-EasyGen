@@ -4,9 +4,8 @@
 #include <stdlib.h>
 
 #include "Numerics.h"
+#include "ParserObjectAttributes.h"
 #include "Random.h"
-
-enum objKind {oNewLine, oSoftLine, oInteger, oFloat, oString, oSeq, oEnd};
 
 struct expr
 {
@@ -28,7 +27,7 @@ struct attr
 
 typedef struct
 {
-    unsigned int objKind;
+    ParserObjectKindT objKind;
     struct attr* attrList;
     struct ParserInternalObjectRecordT *rec, *parent;
 } ParserObjectT;
