@@ -8,7 +8,7 @@
 int64_t ConvertStringToInt64(char* num)
 {
     uint32_t i;
-    uint32_t length = strlen(num);
+    size_t length = strlen(num);
     int64_t result = 0;
     int negative = num[0] == '-';
 

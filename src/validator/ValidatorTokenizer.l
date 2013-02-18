@@ -7,6 +7,7 @@
 #include "ValidatorTokenizer.h"
 
 extern int yylex();
+extern void yyrestart(FILE *new_file);
 
 // Internal function, defined to avoid linking with flex library.
 // Called by tokenizer when EOF is discovered.

@@ -10,7 +10,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
-set(GCC_COMMON_FLAGS -W -Wall -pedantic -Wextra -Winit-self)
+set(GCC_COMMON_FLAGS -W -Wall -pedantic -Wextra -Winit-self -Wno-pedantic-ms-format)
 set(GCC_CFLAGS -std=c99)
 set(GCC_CXXFLAGS -Woverloaded-virtual -Wnon-virtual-dtor -Wold-style-cast)
 set(VC_FLAGS /analyze /W3 /D_CRT_SECURE_NO_WARNINGS)
