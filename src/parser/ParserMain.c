@@ -337,7 +337,7 @@ static int getDelimVal(char ch)
         case ';': case ',': case '=': case '(': case ')':
         case '[': case ']': case '+': case '-': case '*':
         case '/': case '^':
-            return ch; break;
+            return ch;
         default: return -1;
     }
 }
