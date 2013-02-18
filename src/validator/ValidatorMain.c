@@ -3,6 +3,7 @@
 
 #include "Allocator.h"
 #include "File.h"
+#include "Numerics.h"
 #include "Parser.h"
 #include "ParserObjectRecordIterator.h"
 #include "ValidatorErrors.h"
@@ -33,61 +34,38 @@ static ParserObjectRecordT *ValidatorParseFormatDescription(
     return tree;
 }
 
-ValidatorErrorT *ValidatorValidateString(char *input, char *formatDescription)
+ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
 {
     E4C_DECLARE_CONTEXT_STATUS
 
-    ParserObjectRecordT *format = NULL;
-    ParserObjectRecordIteratorT *it = NULL;
-    ParserObjectT *object = NULL;
+    FILE *inputHandle = NULL;
+    char *formatText = NULL;
+    ParserObjectRecordT *formatTree = NULL;
+    ValidatorTokenizerTokenT *currentToken = NULL;
 
     E4C_REUSE_CONTEXT
     try
     {
-        format = ValidatorParseFormatDescription(formatDescription);
-    }
-    catch (RuntimeException)
-    {
-        const e4c_exception *exception = e4c_get_exception();
-        ValidatorRaiseError(exception->message);
-    }
-    E4C_CLOSE_CONTEXT
+        inputHandle = fopen(inputFilename, "r");
+        if (inputHandle == NULL)
+        {
+            throw(InputOutputException, "cannot open input file");
+        }
+        ValidatorTokenizerSetInput(inputHandle);
 
-    if (E4C_WAS_EXCEPTION_THROWN() || ValidatorIsErrorRaised())
-    {
-        return ValidatorGetLastError();
-    }
+        formatText = LoadTextFileIntoMemory(formatFilename);
+        formatTree = ValidatorParseFormatDescription(formatText);
 
-    for (it = ParserObjectRecordGetFrontElement(format);
-              ParserObjectRecordIteratorIsValid(it);
-              ParserObjectRecordIteratorAdvance(it))
-    {
-        object = ParserObjectRecordIteratorDereference(it);
-        printf("%s object\n", g_ParserObjectKind2Str[object->objKind]);
-        printf("attrName '%s'\n", object->attrList[0].attrName);
-        printf("strVal '%s'\n", object->attrList[0].strVal);
-        printf("\n");
-    }
-
-    return ValidatorGetLastError();
-}
-
-ValidatorErrorT *ValidatorValidateFile(
-    char *inputFilename,
-    char *formatFilename
-)
-{
-    E4C_DECLARE_CONTEXT_STATUS
-
-    char *input = NULL;
-    char *format = NULL;
-
-    E4C_REUSE_CONTEXT
-    try
-    {
-        input = LoadTextFileIntoMemory(inputFilename);
-        format = LoadTextFileIntoMemory(formatFilename);
-        ValidatorValidateString(input, format);
+        do
+        {
+            free(currentToken);
+            currentToken = ValidatorTokenizerNextToken();
+            if (currentToken->type == VTT_INTEGER)
+            {
+                printf("'%s' == %I64d\n", currentToken->text,
+                    ConvertStringToInt64(currentToken->text));
+            }
+        } while (currentToken->type != VTT_EOF);
     }
     catch (RuntimeException)
     {
@@ -96,8 +74,11 @@ ValidatorErrorT *ValidatorValidateFile(
     }
     finally
     {
-        free(input);
-        free(format);
+        free(formatText);
+        if (inputHandle != NULL)
+        {
+            fclose(inputHandle);
+        }
     }
     E4C_CLOSE_CONTEXT
 
@@ -105,17 +86,5 @@ ValidatorErrorT *ValidatorValidateFile(
     {
         return ValidatorGetLastError();
     }
-
-    return ValidatorGetLastError();
-}
-
-int32_t main()
-{
-    ValidatorErrorT *error = ValidatorValidateFile("data", "formal.input");
-    if (error != NULL)
-    {
-        printf("%d:%d %s\n", error->line, error->pos, error->message);
-    }
-
-    return 0;
+    return NULL;
 }

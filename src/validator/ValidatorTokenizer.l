@@ -1,4 +1,5 @@
 %{
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,6 +14,8 @@ int yywrap(void)
 {
     return 1;
 }
+
+static int yyeof = 0;
 
 int32_t yyline = 0;
 int32_t yypos = 0;
@@ -40,19 +43,33 @@ char* yytoktext()
 char* yytoktextcopy()
 {
     char* token = AllocateBuffer(yyleng);
-    strncpy(token, yytext, yyleng);
+    strcpy(token, yytext);
     return token;
 }
 
-Token *yynexttoken()
+ValidatorTokenizerTokenT *ValidatorTokenizerNextToken()
 {
-    Token *token = AllocateBuffer(sizeof(Token));
+    ValidatorTokenizerTokenT *token;
+
+    if (yyeof)
+    {
+        return NULL;
+    }
+
+    token = AllocateBuffer(sizeof(ValidatorTokenizerTokenT));
     token->type = yylex();
+    yyeof = token->type == VTT_EOF;
     token->text = yytoktextcopy();
     token->length = yytoklen();
     token->line = yycurline();
     token->pos = yycurpos();
     return token;
+}
+
+void ValidatorTokenizerSetInput(FILE *handle)
+{
+    yyrestart(handle);
+    yyeof = 0;
 }
 
 %}
@@ -65,25 +82,25 @@ Token *yynexttoken()
 \r|\n|\r\n          {
                         yyline++;
                         yypos = 0;
-                        return ttNewLine;
+                        return VTT_NEWLINE;
                     }
 
 -?[0-9]+\.[0-9]+    {
                         yypos += yyleng;
-                        return ttFloat;
+                        return VTT_FLOAT;
                     }
 
 -?[0-9]+            {
                         yypos += yyleng;
-                        return ttInteger;
+                        return VTT_INTEGER;
                     }
 
 [^ \n\t]+           {
                         yypos += yyleng;
-                        return ttString;
+                        return VTT_STRING;
                     }
 
 <<EOF>>             {
-                        return ttEof;
+                        return VTT_EOF;
                     }
 %%

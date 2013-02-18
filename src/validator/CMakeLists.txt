@@ -6,8 +6,13 @@ find_package(FLEX)
 flex_target(tokenizer ${TOKENIZER_FILENAME}.l ${CMAKE_CURRENT_BINARY_DIR}/${TOKENIZER_FILENAME}.c)
 
 file(GLOB SOURCES *.c)
-add_executable(validator ${SOURCES} ${FLEX_tokenizer_OUTPUTS})
-target_link_libraries(validator allocator)
-target_link_libraries(validator exceptions)
-target_link_libraries(validator file)
-target_link_libraries(validator parser)
+set(TESTER_MAIN ValidatorTester.c)
+set(SOURCES ${SOURCES} ${FLEX_tokenizer_OUTPUTS})
+list(REMOVE_ITEM SOURCES ${TESTER_MAIN})
+
+set(LIBRARIES allocator exceptions file numerics parser)
+
+add_library(validator STATIC ${SOURCES})
+add_executable(validator-tester ${TESTER_MAIN})
+target_link_libraries(validator ${LIBRARIES})
+target_link_libraries(validator-tester validator)

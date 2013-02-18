@@ -5,24 +5,27 @@
 
 typedef enum
 {
-    ttNewLine,
-    ttInteger,
-    ttFloat,
-    ttString,
-    ttEof,
-} TokenType;
+    VTT_NEWLINE,
+    VTT_INTEGER,
+    VTT_FLOAT,
+    VTT_STRING,
+    VTT_EOF
+} ValidatorTokenizerTokenTypeT;
 
 typedef struct
 {
-    TokenType type;
+    ValidatorTokenizerTokenTypeT type;
     char* text;
     uint32_t length;
     int32_t line;
     int32_t pos;
-} Token;
+} ValidatorTokenizerTokenT;
 
 // Allocates memory for the next token and returns pointer to it.
 // Token structure and its "text" field should be freed by user.
-Token *yynexttoken();
+ValidatorTokenizerTokenT *ValidatorTokenizerNextToken();
+
+// Set data source for tokenizer (default is stdin).
+void ValidatorTokenizerSetInput(FILE *handle);
 
 #endif // __VALIDATOR_TOKENIZER_H__
