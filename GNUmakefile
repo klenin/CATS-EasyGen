@@ -1,4 +1,4 @@
-.PHONY: all clean
+.PHONY: all clean test
 
 BINARIES = bin
 LIBRARIES = lib
@@ -16,6 +16,9 @@ all: | $(BUILD)
 
 clean:
 	$(RM) -r $(BUILD) $(BINARIES) $(LIBRARIES)
+
+test:
+	cd $(BUILD) && ctest
 
 $(BUILD):
 	mkdir $@

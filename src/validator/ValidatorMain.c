@@ -60,11 +60,6 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
         {
             free(currentToken);
             currentToken = ValidatorTokenizerNextToken();
-            if (currentToken->type == VTT_INTEGER)
-            {
-                printf("'%s' == %I64d\n", currentToken->text,
-                    ConvertStringToInt64(currentToken->text));
-            }
         } while (currentToken->type != VTT_EOF);
     }
     catch (RuntimeException)

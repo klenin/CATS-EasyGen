@@ -10,5 +10,8 @@ all: $(BUILD)
 clean:
 	@RD /S /Q $(BINARIES) $(LIBRARIES) $(BUILD) 2>NUL || REM
 
+test:
+	@CD $(BUILD) && ctest
+
 $(BUILD):
 	@MKDIR $@
