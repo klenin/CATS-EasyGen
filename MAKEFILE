@@ -8,7 +8,7 @@ all: $(BUILD)
 	@CD $(BUILD) && cmake -G "NMake Makefiles" .. && $(MAKE)
 
 clean:
-	DEL /S /Q $(BINARIES) $(LIBRARIES) $(BUILD)
+	@RD /S /Q $(BINARIES) $(LIBRARIES) $(BUILD) 2>NUL || REM
 
 $(BUILD):
 	@MKDIR $@
