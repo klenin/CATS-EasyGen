@@ -32,7 +32,7 @@ int32_t yypos = 0;
 
 int32_t yycurline()
 {
-    return yyline;
+    return yyline + 1;
 }
 
 int32_t yycurpos()

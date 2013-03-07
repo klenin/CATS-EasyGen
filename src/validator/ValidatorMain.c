@@ -155,10 +155,14 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
             g_ValidatorFunctions[currentObject->objKind](currentObject);
         }
     }
+    catch (ValidatorException)
+    {
+        ValidatorRaiseErrorEx(
+            e4c_get_exception()->message, yycurline(), yycurpos());
+    }
     catch (RuntimeException)
     {
-        const e4c_exception *exception = e4c_get_exception();
-        ValidatorRaiseError(exception->message);
+        ValidatorRaiseError(e4c_get_exception()->message);
     }
     finally
     {
