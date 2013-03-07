@@ -3,6 +3,6 @@
 
 #include "Exceptions.h"
 
-void *AllocateBuffer(size_t size);
+E4C_DEFINE_EXCEPTION(ValidatorException, "Validator exception", RuntimeException);
 
 #endif // __VALIDATOR_EXCEPTIONS_H__

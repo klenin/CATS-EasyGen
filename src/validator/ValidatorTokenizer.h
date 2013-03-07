@@ -9,7 +9,8 @@ typedef enum
     VTT_INTEGER,
     VTT_FLOAT,
     VTT_STRING,
-    VTT_EOF
+    VTT_EOF,
+    VTT_COUNT
 } ValidatorTokenizerTokenTypeT;
 
 typedef struct
@@ -20,6 +21,8 @@ typedef struct
     int32_t line;
     int32_t pos;
 } ValidatorTokenizerTokenT;
+
+extern const char* g_ValidatorTokenizerTokenType2Str[VTT_COUNT];
 
 // Allocates memory for the next token and returns pointer to it.
 ValidatorTokenizerTokenT *ValidatorTokenizerNextToken();

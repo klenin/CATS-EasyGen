@@ -9,6 +9,15 @@
 extern int yylex();
 extern void yyrestart(FILE *new_file);
 
+const char* g_ValidatorTokenizerTokenType2Str[VTT_COUNT] =
+{
+    "newline",
+    "integer",
+    "float",
+    "string",
+    "EOF"
+};
+
 // Internal function, defined to avoid linking with flex library.
 // Called by tokenizer when EOF is discovered.
 int yywrap(void)
