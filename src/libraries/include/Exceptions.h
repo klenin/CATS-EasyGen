@@ -90,6 +90,7 @@
 
 /*@-exportany@*/
 
+#include "LanguageStandard.h"
 
 /* C99 features */
 # if defined(_ISOC99_SOURCE) \
@@ -114,6 +115,20 @@
 
 #   ifndef HAVE_C99_SNPRINTF
 #       define HAVE_C99_SNPRINTF
+#   endif
+
+# elif defined(_MSC_VER)
+
+#   if (_MSC_VER >= MSVS_2003)
+#      ifndef HAVE_C99_VSNPRINTF
+#           define HAVE_C99_VSNPRINTF
+#      endif
+#   endif
+
+#   if (_MSC_VER >= MSVS_2005)
+#       ifndef HAVE_C99_VARIADIC_MACROS
+#           define HAVE_C99_VARIADIC_MACROS
+#       endif
 #   endif
 
 # endif
