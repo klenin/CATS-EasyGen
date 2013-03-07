@@ -21,7 +21,14 @@ int main(int argc, char **argv)
 
     if (error != NULL)
     {
-        printf("%d:%d %s\n", error->line, error->pos, error->message);
+        if (error->line != -1 && error->pos != -1)
+        {
+            printf("%d:%d %s\n", error->line, error->pos, error->message);
+        }
+        else
+        {
+            printf("%s\n", error->message);
+        }
         return EXIT_FAILURE;
     }
 
