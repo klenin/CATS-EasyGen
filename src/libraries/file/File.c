@@ -5,19 +5,27 @@
 #include "Exceptions.h"
 #include "LanguageStandard.h"
 
-char *LoadTextFileIntoMemory(char *filename)
+FILE *FileOpen(const char *filename, const char *mode)
+{
+    FILE *file = NULL;
+
+    file = fopen(filename, mode);
+    if (file == NULL)
+    {
+        throwf(InputOutputException, "cannot open file '%s'", filename);
+    }
+
+    return file;
+}
+
+char *FileReadTextFile(const char *filename)
 {
     FILE *file = NULL;
     char *buffer = NULL;
     size_t filesize;
     size_t actual;
 
-    file = fopen(filename, "r");
-    if (file == NULL)
-    {
-        throwf(InputOutputException, "cannot read file '%s'", filename);
-    }
-
+    file = FileOpen(filename, "r");
     fseek(file, 0L, SEEK_END);
     filesize = ftell(file);
     if (filesize == 0)

@@ -142,14 +142,10 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
     E4C_REUSE_CONTEXT
     try
     {
-        inputHandle = fopen(inputFilename, "r");
-        if (inputHandle == NULL)
-        {
-            throw(InputOutputException, "cannot open input file");
-        }
+        inputHandle = FileOpen(inputFilename, "r");
         ValidatorTokenizerSetInput(inputHandle);
 
-        formatText = LoadTextFileIntoMemory(formatFilename);
+        formatText = FileReadTextFile(formatFilename);
         formatTree = ValidatorParseFormatDescription(formatText);
         for (formatIterator = ParserObjectRecordGetFrontElement(formatTree);
                               ParserObjectRecordIteratorIsValid(formatIterator);
