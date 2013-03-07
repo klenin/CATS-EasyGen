@@ -43,7 +43,7 @@ char* yytoktext()
 
 char* yytoktextcopy()
 {
-    char* token = AllocateBuffer(yyleng);
+    char* token = AllocateBuffer(yyleng + 1);
     strcpy(token, yytext);
     return token;
 }
@@ -65,6 +65,15 @@ ValidatorTokenizerTokenT *ValidatorTokenizerNextToken()
     token->line = yycurline();
     token->pos = yycurpos();
     return token;
+}
+
+void ValidatorTokenizerDestroyToken(ValidatorTokenizerTokenT *token)
+{
+    if (token != NULL)
+    {
+        free(token->text);
+        free(token);
+    }
 }
 
 void ValidatorTokenizerSetInput(FILE *handle)

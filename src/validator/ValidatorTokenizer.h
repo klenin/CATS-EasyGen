@@ -22,8 +22,10 @@ typedef struct
 } ValidatorTokenizerTokenT;
 
 // Allocates memory for the next token and returns pointer to it.
-// Token structure and its "text" field should be freed by user.
 ValidatorTokenizerTokenT *ValidatorTokenizerNextToken();
+
+// Destroys token structure.
+void ValidatorTokenizerDestroyToken(ValidatorTokenizerTokenT *token);
 
 // Set data source for tokenizer (default is stdin).
 void ValidatorTokenizerSetInput(FILE *handle);
