@@ -14,7 +14,7 @@ static ParserObjectRecordIteratorT *ParserCreateObjectRecordIterator(
 
 int ParserObjectRecordIteratorIsValid(ParserObjectRecordIteratorT *iterator)
 {
-    return iterator != NULL &&
+    return (iterator != NULL) && (iterator->record != NULL) &&
         (iterator->index >= 0 && iterator->index < iterator->record->n);
 }
 
