@@ -1075,7 +1075,7 @@ void autoGenStr(ParserObjectWithDataT info)
     }
 }
 
-int getSeqLen(ParserObjectWithDataT info)
+int ParserGetSequenceLength(ParserObjectWithDataT info)
 {
     if (info.objPart->objKind != PARSER_OBJECT_KIND_SEQUENCE)
     {
@@ -1096,7 +1096,7 @@ void autoGenSeq(ParserObjectWithDataT info)
         genParseError(E_GENERATE_NON_SEQUENCE);
         return;
     }
-    byIndex(info, n);
+    ParserGetSequenceElement(info, n);
     for (i = 0; i < n; i++) {
         rnd.pointerToData = &(((ParserObjectRecordDataT*)(info.pointerToData->value))[i]);
         rnd.recPart = info.objPart->rec;
@@ -1170,13 +1170,16 @@ ParserObjectWithDataT ParserFindObjectByName(
     return ParserFindObject(name, info, 0);
 }
 
-ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index)
+ParserObjectRecordWithDataT ParserGetSequenceElement(
+    ParserObjectWithDataT info,
+    int64_t index
+)
 {
     ParserObjectDataT* data = info.pointerToData;
     ParserObjectT* a = info.objPart;
     ParserObjectRecordWithDataT res;
     ParserObjectRecordDataT* d, *tmp;
-    int n = (int)evaluate(a->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
+    int n = ParserGetSequenceLength(info);
     int i;
     res.pointerToData = 0; res.recPart = 0;
     if (ParserIsErrorRaised()) return res;

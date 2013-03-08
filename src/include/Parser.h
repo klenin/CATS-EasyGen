@@ -86,7 +86,7 @@ ParserObjectWithDataT ParserFindObject(
     ParserObjectRecordWithDataT rec,
     int goUp
 );
-int getSeqLen(ParserObjectWithDataT info);
+int ParserGetSequenceLength(ParserObjectWithDataT info);
 
 // important functions
 void initialize(const char* buf);
@@ -125,8 +125,14 @@ int64_t ParserGetFloatDigits(ParserObjectWithDataT info);
 void ParserSetFloatValue(ParserObjectWithDataT info, const long double value);
 void ParserSetStringValue(ParserObjectWithDataT info, const char* value); // copy value
 
-ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index);
-ParserObjectWithDataT ParserFindObjectByName(ParserObjectRecordWithDataT info, const char* name);
+ParserObjectRecordWithDataT ParserGetSequenceElement(
+    ParserObjectWithDataT info,
+    int64_t index
+);
+ParserObjectWithDataT ParserFindObjectByName(
+    ParserObjectRecordWithDataT info,
+    const char* name
+);
 
 void autoGenRecord(ParserObjectRecordWithDataT info);
 void autoGenSeq(ParserObjectWithDataT info);

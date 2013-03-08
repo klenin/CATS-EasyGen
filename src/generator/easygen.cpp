@@ -213,7 +213,7 @@ void prxRecord::autoGen()
 
 prxRecord prxObject::operator [] (int index)
 {
-    ParserObjectRecordWithDataT tmp = byIndex(a, index);
+    ParserObjectRecordWithDataT tmp = ParserGetSequenceElement(a, index);
     genError::processParseError();
     return prxRecord(tmp);
 }
@@ -310,9 +310,9 @@ void prxObject::print()
             wasSpaceChar = 0;
             break;
         case PARSER_OBJECT_KIND_SEQUENCE:
-            int n = getSeqLen(a);
+            int n = ParserGetSequenceLength(a);
             for (int i = 1; i <= n; i++) {
-                prxRecord tmp(byIndex(a, i));
+                prxRecord tmp(ParserGetSequenceElement(a, i));
                 genError::processParseError();
                 tmp.print();
             }

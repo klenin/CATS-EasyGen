@@ -1,0 +1,7 @@
+integer name = N, range = [1, 100]; 
+newline;
+seq name = S, length = N;
+   integer name = ai, range = [-100, 100];
+   integer name = bi, range = [-100, 100];
+   softline;
+end;

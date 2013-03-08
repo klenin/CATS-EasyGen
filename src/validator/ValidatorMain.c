@@ -188,7 +188,8 @@ static char *ValidatorValidateString(
     PARSER_CALL(ParserEvaluateLenRange(objectData, &leftBound, &rightBound));
     if (valueLength < leftBound || valueLength > rightBound)
     {
-        throwf(ValidatorException, "string length %lld is not in range [%lld, %lld]",
+        throwf(ValidatorException,
+            "string length %lld is not in range [%lld, %lld]",
             valueLength, leftBound, rightBound);
     }
 
@@ -250,8 +251,48 @@ DECLARE_VALIDATOR(ValidatorValidateGenericObject)
     ValidatorTokenizerDestroyToken(token);
 }
 
+static void ValidatorValidateObjectRecord(ParserObjectRecordWithDataT *recordData)
+{
+    E4C_DECLARE_CONTEXT_STATUS
+
+    ParserObjectT *currentObject = NULL;
+    ParserObjectRecordIteratorT *iterator = NULL;
+
+    E4C_REUSE_CONTEXT
+    try
+    {
+        for (iterator = ParserObjectRecordGetFrontElement(recordData->recPart);
+                        ParserObjectRecordIteratorIsValid(iterator);
+                        ParserObjectRecordIteratorAdvance(iterator))
+        {
+            currentObject = ParserObjectRecordIteratorDereference(iterator);
+            g_ValidatorFunctions[currentObject->objKind](currentObject, recordData);
+        }
+    }
+    finally
+    {
+        free(iterator);
+    }
+    E4C_CLOSE_CONTEXT
+}
+
 DECLARE_VALIDATOR(ValidatorValidateSequence)
 {
+    char *objectName;
+    ParserObjectWithDataT objectData;
+    int32_t sequenceLength;
+    int32_t i;
+
+    objectName = object->attrList[PARSER_OBJECT_ATTR_NAME].strVal;
+    PARSER_CALL(objectData = ParserFindObjectByName(*dataTree, objectName));
+    PARSER_CALL(sequenceLength = ParserGetSequenceLength(objectData));
+
+    for (i = 1; i <= sequenceLength; ++i)
+    {
+        ParserObjectRecordWithDataT item;
+        PARSER_CALL(item = ParserGetSequenceElement(objectData, i));
+        ValidatorValidateObjectRecord(&item);
+    }
 }
 
 DECLARE_VALIDATOR(ValidatorValidateEnd)
@@ -279,9 +320,7 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
 
     FILE *inputHandle = NULL;
     char *formatText = NULL;
-    ParserObjectT *currentObject = NULL;
     ParserObjectRecordT *formatTree = NULL;
-    ParserObjectRecordIteratorT *formatIterator = NULL;
     ParserObjectRecordWithDataT *dataTree = NULL;
 
     E4C_REUSE_CONTEXT
@@ -296,14 +335,7 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
         dataTree->pointerToData = NULL;
         dataTree->recPart = formatTree;
         PARSER_CALL(dataTree = ParserAllocateObjectRecordWithData(dataTree, 1));
-
-        for (formatIterator = ParserObjectRecordGetFrontElement(formatTree);
-                              ParserObjectRecordIteratorIsValid(formatIterator);
-                              ParserObjectRecordIteratorAdvance(formatIterator))
-        {
-            currentObject = ParserObjectRecordIteratorDereference(formatIterator);
-            g_ValidatorFunctions[currentObject->objKind](currentObject, dataTree);
-        }
+        ValidatorValidateObjectRecord(dataTree);
     }
     catch (ParserException)
     {
@@ -323,7 +355,6 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
     finally
     {
         free(formatText);
-        free(formatIterator);
         ParserDestroyObjectRecordWithData(dataTree);
         free(dataTree);
         ParserDestroyObjectRecord(formatTree);
