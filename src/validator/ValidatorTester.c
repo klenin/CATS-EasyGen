@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 
     if (error != NULL)
     {
-        if (error->line != -1 && error->pos != -1)
+        if (error->line > 0 && error->pos >= 0)
         {
             printf("%d:%d %s\n", error->line, error->pos, error->message);
         }

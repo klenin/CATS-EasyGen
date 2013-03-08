@@ -37,7 +37,7 @@ int32_t yycurline()
 
 int32_t yycurpos()
 {
-    return yypos;
+    return yypos - (yypos > 0 ? yyleng: 0) + 1;
 }
 
 uint32_t yytoklen()

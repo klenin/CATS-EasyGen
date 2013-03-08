@@ -28,8 +28,8 @@ bool wasSpaceChar;
 
 void genError::processParseError()
 {
-    if (wasError()) {
-        ParserErrorT* tmp = getLastError();
+    if (ParserIsErrorRaised()) {
+        ParserErrorT* tmp = ParserGetLastError();
         ostringstream ss;
         ss << string(ParserGetErrorMessageByCode(tmp->code))
             << ". Line: " << tmp->line << ", pos: " << tmp->pos;
@@ -110,7 +110,7 @@ testInfo::testInfo(int argc, char* argv[])
     ParserObjectRecordT* tmp = parseObjRecord();
     genError::processParseError();
     desc.a.pointerToData = 0; desc.a.recPart = tmp;
-    desc.a = mallocRecord(desc.a, 1);
+    desc.a = *ParserAllocateObjectRecordWithData(&desc.a, 1);
     wasSpaceChar = true;
     paramsToVars();
 }
@@ -118,8 +118,8 @@ testInfo::testInfo(int argc, char* argv[])
 testInfo::~testInfo()
 {
     print();
-    destroyRecData(desc.a);
-    objRecordDestructor(desc.a.recPart);
+    ParserDestroyObjectRecordWithData(&desc.a);
+    ParserDestroyObjectRecord(desc.a.recPart);
     finalize();
     free(buf);
 }
@@ -148,7 +148,7 @@ void testInfo::paramsToVars()
     for (map<string, string>::iterator i = params.begin(); i != params.end(); ++i) {
         if (i->first == randseedParamName) SetRandSeed(getIntParam(i->first));
         else {
-            ParserObjectWithDataT tmp = findObject(i->first.c_str(), desc.a, 0);
+            ParserObjectWithDataT tmp = ParserFindObject(i->first.c_str(), desc.a, 0);
             if (tmp.objPart) {
                 switch (tmp.objPart->objKind) {
                     case PARSER_OBJECT_KIND_INTEGER:
@@ -222,7 +222,7 @@ prxObject& prxObject::operator = (const int64_t& value)
 {
     if (a.objPart->objKind != PARSER_OBJECT_KIND_INTEGER)
         throw genError("trying to assign integer to non-int object");
-    setIntValue(a, value);
+    ParserSetIntegerValue(a, value);
     genError::processParseError();
     return *this;
 }

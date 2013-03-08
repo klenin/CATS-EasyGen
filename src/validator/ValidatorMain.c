@@ -11,9 +11,12 @@
 #include "ValidatorExceptions.h"
 #include "ValidatorTokenizer.h"
 
+#define PARSER_CALL(call) do { call; ValidatorProcessParserError(); } while(0)
+
 #define PARSER_ERROR_PREFIX "parser error: "
 
-#define DECLARE_VALIDATOR(name) static int name(ParserObjectT *object)
+#define DECLARE_VALIDATOR(name) \
+    static void name(ParserObjectT *object, ParserObjectRecordWithDataT *dataTree)
 
 DECLARE_VALIDATOR(ValidatorValidateNewline);
 DECLARE_VALIDATOR(ValidatorValidateSoftline);
@@ -23,7 +26,9 @@ DECLARE_VALIDATOR(ValidatorValidateString);
 DECLARE_VALIDATOR(ValidatorValidateSequence);
 DECLARE_VALIDATOR(ValidatorValidateEnd);
 
-static int (*g_ValidatorFunctions[PARSER_OBJECT_KINDS_COUNT])(ParserObjectT*) =
+static void
+    (*g_ValidatorFunctions[PARSER_OBJECT_KINDS_COUNT])
+        (ParserObjectT*, ParserObjectRecordWithDataT*) =
 {
     ValidatorValidateNewline,
     ValidatorValidateSoftline,
@@ -46,6 +51,27 @@ static const ValidatorTokenizerTokenTypeT
     VTT_EOF      // PARSER_OBJECT_KIND_END
 };
 
+static void ValidatorProcessParserErrorEx(ParserErrorT *error)
+{
+    const char *parserMessage = ParserGetErrorMessageByCode(error->code);
+    char *finalMessage;
+    size_t messageLength =
+        strlen(PARSER_ERROR_PREFIX) + strlen(parserMessage);
+
+    finalMessage = AllocateBuffer(messageLength);
+    sprintf(finalMessage, PARSER_ERROR_PREFIX"%s", parserMessage);
+    ValidatorRaiseErrorEx(finalMessage, error->line, error->pos);
+    throw(ParserException, finalMessage);
+}
+
+static void ValidatorProcessParserError()
+{
+    if (ParserIsErrorRaised())
+    {
+        ValidatorProcessParserErrorEx(ParserGetLastError());
+    }
+}
+
 static ValidatorTokenizerTokenT *ValidatorSafeGetNextToken()
 {
     ValidatorTokenizerTokenT *token = ValidatorTokenizerNextToken();
@@ -63,7 +89,7 @@ static void ValidatorAssertObjectType(
 {
     if (g_ParserObject2ValidatorToken[expected] != actual)
     {
-        throwf(ValidatorException, "expected '%s', but got '%s'",
+        throwf(ValidatorException, "expected %s, but got %s",
             g_ParserObjectKind2Str[expected],
             g_ValidatorTokenizerTokenType2Str[actual]);
     }
@@ -74,37 +100,50 @@ DECLARE_VALIDATOR(ValidatorValidateNewline)
     ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
     ValidatorAssertObjectType(object->objKind, token->type);
     ValidatorTokenizerDestroyToken(token);
-    return EXIT_SUCCESS;
 }
 
 DECLARE_VALIDATOR(ValidatorValidateSoftline)
 {
-    return EXIT_SUCCESS;
 }
 
 DECLARE_VALIDATOR(ValidatorValidateInteger)
 {
-    return EXIT_SUCCESS;
+    ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
+    char *objectName;
+    ParserObjectWithDataT objectData;
+    int64_t leftBound, rightBound;
+    int64_t objectValue;
+
+    ValidatorAssertObjectType(object->objKind, token->type);
+    objectName = object->attrList[PARSER_OBJECT_ATTR_NAME].strVal;
+    PARSER_CALL(objectData = ParserFindObject(objectName, *dataTree, 0));
+    PARSER_CALL(ParserEvaluateIntRange(objectData, &leftBound, &rightBound));
+    objectValue = strtoll(token->text, NULL, 10);
+    if (objectValue < leftBound || objectValue > rightBound)
+    {
+        throwf(ValidatorException, "%lld is not in range [%lld, %lld]",
+            objectValue, leftBound, rightBound);
+    }
+    PARSER_CALL(ParserSetIntegerValue(objectData, objectValue));
+
+    ValidatorTokenizerDestroyToken(token);
 }
 
 DECLARE_VALIDATOR(ValidatorValidateFloat)
 {
-    return EXIT_SUCCESS;
 }
 
 DECLARE_VALIDATOR(ValidatorValidateString)
 {
-    return EXIT_SUCCESS;
 }
 
 DECLARE_VALIDATOR(ValidatorValidateSequence)
 {
-    return EXIT_SUCCESS;
 }
 
 DECLARE_VALIDATOR(ValidatorValidateEnd)
 {
-    return EXIT_SUCCESS;
+    // Dummy function.
 }
 
 static ParserObjectRecordT *ValidatorParseFormatDescription(
@@ -113,18 +152,10 @@ static ParserObjectRecordT *ValidatorParseFormatDescription(
 {
     ParserObjectRecordT *tree = NULL;
     ParserErrorT *error = NULL;
-
     ParserValidateFormatDescription(formatDescription, &tree, &error);
     if (error != NULL)
     {
-        const char *parserMessage = ParserGetErrorMessageByCode(error->code);
-        char *finalMessage;
-        size_t messageLength =
-            strlen(PARSER_ERROR_PREFIX) + strlen(parserMessage);
-
-        finalMessage = AllocateBuffer(messageLength);
-        sprintf(finalMessage, PARSER_ERROR_PREFIX"%s", parserMessage);
-        ValidatorRaiseErrorEx(finalMessage, error->line, error->pos);
+        ValidatorProcessParserErrorEx(error);
     }
     return tree;
 }
@@ -138,22 +169,32 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
     ParserObjectT *currentObject = NULL;
     ParserObjectRecordT *formatTree = NULL;
     ParserObjectRecordIteratorT *formatIterator = NULL;
+    ParserObjectRecordWithDataT *dataTree = NULL;
 
     E4C_REUSE_CONTEXT
     try
     {
         inputHandle = FileOpen(inputFilename, "r");
         ValidatorTokenizerSetInput(inputHandle);
-
         formatText = FileReadTextFile(formatFilename);
         formatTree = ValidatorParseFormatDescription(formatText);
+
+        dataTree = AllocateBuffer(sizeof(ParserObjectRecordWithDataT));
+        dataTree->pointerToData = NULL;
+        dataTree->recPart = formatTree;
+        PARSER_CALL(dataTree = ParserAllocateObjectRecordWithData(dataTree, 1));
+
         for (formatIterator = ParserObjectRecordGetFrontElement(formatTree);
                               ParserObjectRecordIteratorIsValid(formatIterator);
                               ParserObjectRecordIteratorAdvance(formatIterator))
         {
             currentObject = ParserObjectRecordIteratorDereference(formatIterator);
-            g_ValidatorFunctions[currentObject->objKind](currentObject);
+            g_ValidatorFunctions[currentObject->objKind](currentObject, dataTree);
         }
+    }
+    catch (ParserException)
+    {
+        // Validator error already raised, just catch.
     }
     catch (ValidatorException)
     {
@@ -168,6 +209,9 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
     {
         free(formatText);
         free(formatIterator);
+        ParserDestroyObjectRecordWithData(dataTree);
+        free(dataTree);
+        ParserDestroyObjectRecord(formatTree);
         if (inputHandle != NULL)
         {
             fclose(inputHandle);

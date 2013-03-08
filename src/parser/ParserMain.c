@@ -99,7 +99,7 @@ static void objDestructor1(ParserObjectT* a)
 {
     if (!a) return;
     attrListDestructor(a->attrList);
-    objRecordDestructor(a->rec);
+    ParserDestroyObjectRecord(a->rec);
 }
 
 void objDestructor(ParserObjectT* a)
@@ -108,7 +108,7 @@ void objDestructor(ParserObjectT* a)
     free(a);
 }
 
-void objRecordDestructor(ParserObjectRecordT* a)
+void ParserDestroyObjectRecord(ParserObjectRecordT* a)
 {
     int i;
     if (!a) return;
@@ -264,7 +264,7 @@ const char* ParserGetErrorMessageByCode(int errCode)
     return errorMessages[E_UNKNOWN_ERROR].message;
 }
 
-ParserErrorT* getLastError()
+ParserErrorT* ParserGetLastError()
 {
     ParserErrorT* res;
     if (!lastError) return 0;
@@ -273,7 +273,7 @@ ParserErrorT* getLastError()
     return res;
 }
 
-int wasError()
+int ParserIsErrorRaised()
 {
     return lastError != 0;
 }
@@ -289,7 +289,7 @@ static void genParseError(int errCode)
     #endif
 }
 
-ParserObjectWithDataT findObject(const char* name, ParserObjectRecordWithDataT rec, int goUp)
+ParserObjectWithDataT ParserFindObject(const char* name, ParserObjectRecordWithDataT rec, int goUp)
 {
     int i;
     ParserObjectWithDataT res;
@@ -536,19 +536,19 @@ static struct expr* parseExpression1(int priority, int isFirst,
                 strcpy(res->varName, curToken->str);
 
                 tmp.pointerToData = 0; tmp.recPart = curSeq;
-                varObj = findObject(res->varName, tmp, 1).objPart;
+                varObj = ParserFindObject(res->varName, tmp, 1).objPart;
                 if (!varObj) genParseError(E_UNKNOWN_OBJECT);
-                if (!wasError() && varObj->objKind != PARSER_OBJECT_KIND_INTEGER) genParseError(E_INTEGER_OBJECT_EXPECTED);
-                if (wasError()) {exprDestructor(res); return 0;}
+                if (!ParserIsErrorRaised() && varObj->objKind != PARSER_OBJECT_KIND_INTEGER) genParseError(E_INTEGER_OBJECT_EXPECTED);
+                if (ParserIsErrorRaised()) {exprDestructor(res); return 0;}
                 moveToNextToken();
-                if (wasError()) {exprDestructor(res); return 0;}
+                if (ParserIsErrorRaised()) {exprDestructor(res); return 0;}
                 return res;
             case ttInteger:
                 res = AllocateBuffer(sizeof(struct expr));
                 res->op1 = res->op2 = 0; res->opCode = 0; res->varName = 0;
                 res->intConst = curToken->value;
                 moveToNextToken();
-                if (wasError()) {exprDestructor(res); return 0;}
+                if (ParserIsErrorRaised()) {exprDestructor(res); return 0;}
                 return res;
             case ttDelim:
                 if (curToken->value == '(') {
@@ -569,7 +569,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
     } else {
         op = parseExpression1(priority + 1, 1, curSeq);
 
-        if (wasError()) {exprDestructor(op); return NULL;}
+        if (ParserIsErrorRaised()) {exprDestructor(op); return NULL;}
         if (!op) {
             if (priority == getOpPriority('+') && isFirst &&
                 (chkCurToken('+') || chkCurToken('-'))) { // unary operations
@@ -611,7 +611,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
                     op = res;
             }
         }
-        if (wasError()) {exprDestructor(op); return NULL;}
+        if (ParserIsErrorRaised()) {exprDestructor(op); return NULL;}
         return op;
     }
 }
@@ -698,7 +698,7 @@ static ParserObjectAttrT* parseAttr(ParserObjectRecordT* curSeq)
             genParseError(B_ARRAY_ATTR_TYPE_BY_KIND);
             attrDestructor(res); return NULL;
     }
-    if (wasError()) {attrDestructor(res); return NULL;}
+    if (ParserIsErrorRaised()) {attrDestructor(res); return NULL;}
     return res;
 }
 
@@ -738,7 +738,7 @@ static ParserObjectAttrT* parseAttrList(
         } else bad = 0;
     }
 
-    if (wasError()) {attrListDestructor(res); return NULL;}
+    if (ParserIsErrorRaised()) {attrListDestructor(res); return NULL;}
     if (n < getAttrCount(objKind)) bad = 1;
     if (bad) {
         attrListDestructor(res);
@@ -775,7 +775,7 @@ static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
         name = attrList[PARSER_OBJECT_ATTR_NAME].strVal;
         if (name) { // if name doesn't exist, than it's unnamed objKind
             tmp.pointerToData = 0; tmp.recPart = curSeq;
-            if (findObject(name, tmp, 0).objPart) {
+            if (ParserFindObject(name, tmp, 0).objPart) {
                 genParseError(E_DUPLICATE_OBJECT);
                 attrListDestructor(attrList);
                 return NULL;
@@ -794,7 +794,7 @@ static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
                 res->rec = parseObjRecord1(curSeq);
                 if (!res->rec) {objDestructor(res); return 0;}
             } else res->rec = 0;
-            if (wasError()) {objDestructor(res); return 0;}
+            if (ParserIsErrorRaised()) {objDestructor(res); return 0;}
             //res->parent = curSeq;  <- curSeq will reallocate anyway
             return res;
     }
@@ -831,7 +831,7 @@ static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent)
             if (tmp->seq[i].objKind == PARSER_OBJECT_KIND_SEQUENCE) tmp->seq[i].rec->parent = tmp;
         }
         tmp->parent = res->parent; tmp->n = res->n;
-        res->n--; objRecordDestructor(res);
+        res->n--; ParserDestroyObjectRecord(res);
         copyObjToObj(tmp->seq + tmp->n - 1, curObj);
         tmp->seq[tmp->n - 1].parent = tmp;
         if (tmp->seq[tmp->n - 1].objKind == PARSER_OBJECT_KIND_SEQUENCE)
@@ -844,7 +844,7 @@ static ParserObjectRecordT* parseObjRecord1(ParserObjectRecordT* parent)
         genParseError(E_END_EXPECTED);
     }
 
-    if (wasError()) {objRecordDestructor(res); return 0;}
+    if (ParserIsErrorRaised()) {ParserDestroyObjectRecord(res); return 0;}
     return res;
 }
 
@@ -854,24 +854,28 @@ ParserObjectRecordT* parseObjRecord()
 }
 
 //-----------------------------data processing procedures----------------------
-ParserObjectRecordWithDataT mallocRecord(ParserObjectRecordWithDataT info, int isRoot)
+ParserObjectRecordWithDataT* ParserAllocateObjectRecordWithData(
+    ParserObjectRecordWithDataT *info,
+    int isRoot
+)
 {
     int i;
-    if (!info.recPart->n) {info.pointerToData = 0; return info;}
+    if (!info) return NULL;
+    if (!info->recPart->n) {info->pointerToData = 0; return info;}
     if (isRoot) {
-        info.pointerToData = AllocateBuffer(sizeof(ParserObjectRecordDataT));
-        info.pointerToData->parentData = 0;
+        info->pointerToData = AllocateBuffer(sizeof(ParserObjectRecordDataT));
+        info->pointerToData->parentData = 0;
     }
-    info.pointerToData->data =
-        AllocateArray(info.recPart->n, sizeof(ParserObjectDataT));
-    for (i = 0; i < info.recPart->n; i++) {
-        info.pointerToData->data[i].value = 0;
-        info.pointerToData->data[i].parentData = info.pointerToData;
+    info->pointerToData->data =
+        AllocateArray(info->recPart->n, sizeof(ParserObjectDataT));
+    for (i = 0; i < info->recPart->n; i++) {
+        info->pointerToData->data[i].value = 0;
+        info->pointerToData->data[i].parentData = info->pointerToData;
     }
     return info;
 }
 
-static void getIntLR(ParserObjectWithDataT info, int64_t* l, int64_t* r)
+void ParserEvaluateIntRange(ParserObjectWithDataT info, int64_t* l, int64_t* r)
 {
     *l = evaluate(info.objPart->attrList[PARSER_OBJECT_ATTR_RANGE].exVal1,
         info);
@@ -927,7 +931,7 @@ char* getStrValue(ParserObjectWithDataT info)
     return NULL;
 }
 
-void setIntValue(ParserObjectWithDataT info, const int64_t value)
+void ParserSetIntegerValue(ParserObjectWithDataT info, const int64_t value)
 {
     if (info.objPart->objKind != PARSER_OBJECT_KIND_INTEGER) {
         genParseError(E_ASSIGN_NON_INT);
@@ -935,7 +939,7 @@ void setIntValue(ParserObjectWithDataT info, const int64_t value)
     }
     if (!info.pointerToData->value) {
         int64_t l, r;
-        getIntLR(info, &l, &r);
+        ParserEvaluateIntRange(info, &l, &r);
         if (value < l || value > r) {
             genParseError(E_OUT_OF_RANGE);
         } else {
@@ -953,7 +957,7 @@ void setFloatValue(ParserObjectWithDataT info, const long double value)
     }
     if (!info.pointerToData->value) {
         int64_t l, r, d;
-        getIntLR(info, &l, &r); // it just takes "range" attribute
+        ParserEvaluateIntRange(info, &l, &r); // it just takes "range" attribute
         if (value < l || value > r) {
             genParseError(E_OUT_OF_RANGE);
             return;
@@ -979,8 +983,8 @@ void setStrValue(ParserObjectWithDataT info, const char* value)
     }
     if (!info.pointerToData->value) {
         n = (int32_t)strlen(value);
-        getIntLR(info, &l, &r);
-        if (wasError()) return;
+        ParserEvaluateIntRange(info, &l, &r);
+        if (ParserIsErrorRaised()) return;
         if (n < l || n > r) {
             genParseError(E_INVALID_STRING_LENGTH);
             return;
@@ -1005,8 +1009,8 @@ void autoGenInt(ParserObjectWithDataT info)
         return;
     }
     if (!info.pointerToData->value) {
-        getIntLR(info, &l, &r);
-        if (wasError()) return;
+        ParserEvaluateIntRange(info, &l, &r);
+        if (ParserIsErrorRaised()) return;
         tmp = GenerateRandInt(l, r);
         info.pointerToData->value = AllocateBuffer(sizeof(tmp));
         memcpy(info.pointerToData->value, &tmp, sizeof(tmp));
@@ -1024,8 +1028,8 @@ void autoGenFloat(ParserObjectWithDataT info)
         int64_t l, r;
         int64_t d = evaluate(
             info.objPart->attrList[PARSER_OBJECT_ATTR_DIGITS].exVal1, info);
-        if (wasError()) return;
-        getIntLR(info, &l, &r);
+        if (ParserIsErrorRaised()) return;
+        ParserEvaluateIntRange(info, &l, &r);
         rnd = GenerateRandFloat(l, r, d);
         info.pointerToData->value = AllocateBuffer(sizeof(rnd));
         memcpy(info.pointerToData->value, &rnd, sizeof(rnd));
@@ -1041,8 +1045,8 @@ void autoGenStr(ParserObjectWithDataT info)
         return;
     }
     if (!info.pointerToData->value) {
-        getIntLR(info, &l, &r);
-        if (wasError()) return;
+        ParserEvaluateIntRange(info, &l, &r);
+        if (ParserIsErrorRaised()) return;
         rnd = GenerateRandInt(l, r);
         res = AllocateBuffer((size_t)rnd + 1);
         for (i = 0; i < rnd; ++i) {
@@ -1070,7 +1074,7 @@ void autoGenSeq(ParserObjectWithDataT info)
     int i;
     int64_t n = evaluate(
         info.objPart->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
-    if (wasError()) return;
+    if (ParserIsErrorRaised()) return;
     if (info.objPart->objKind != PARSER_OBJECT_KIND_SEQUENCE) {
         genParseError(E_GENERATE_NON_SEQUENCE);
         return;
@@ -1089,7 +1093,7 @@ void autoGenRecord(ParserObjectRecordWithDataT info)
     ParserObjectKindT objk;
     ParserObjectWithDataT tmp;
     if (!info.pointerToData->data) {
-        info = mallocRecord(info, 0);
+        info = *ParserAllocateObjectRecordWithData(&info, 0);
     }
     for (i = 0; i < info.recPart->n; i++) {
         tmp.objPart = &(info.recPart->seq[i]);
@@ -1134,7 +1138,7 @@ int64_t evaluate(struct expr* e, ParserObjectWithDataT info)
     } else if (e->varName) {
         rnd.pointerToData = info.pointerToData->parentData;
         rnd.recPart = info.objPart->parent;
-        tmp = findObject(e->varName, rnd, 1);
+        tmp = ParserFindObject(e->varName, rnd, 1);
         if (!tmp.objPart) genParseError(B_UNKNOWN_IDENTIFIER);
         res = getIntValue(tmp);
     } else res = e->intConst;
@@ -1143,7 +1147,7 @@ int64_t evaluate(struct expr* e, ParserObjectWithDataT info)
 
 ParserObjectWithDataT byName(ParserObjectRecordWithDataT info, const char* name)
 {
-    return findObject(name, info, 0);
+    return ParserFindObject(name, info, 0);
 }
 
 ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index)
@@ -1155,7 +1159,7 @@ ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index)
     int n = (int)evaluate(a->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
     int i;
     res.pointerToData = 0; res.recPart = 0;
-    if (wasError()) return res;
+    if (ParserIsErrorRaised()) return res;
     if (index < 1 || index > n) {
         genParseError(E_INVALID_INDEX);
         return res;
@@ -1172,7 +1176,7 @@ ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index)
     res.recPart = a->rec;
     //take 1-indexed value
     res.pointerToData = &(((ParserObjectRecordDataT*)(data->value))[index-1]);
-    if (!res.pointerToData->data) res = mallocRecord(res, 0);
+    if (!res.pointerToData->data) res = *ParserAllocateObjectRecordWithData(&res, 0);
     return res;
 }
 
@@ -1186,25 +1190,26 @@ void destroySeqData(ParserObjectWithDataT info)
     }
     n = (int)evaluate(
         info.objPart->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
-    if (wasError()) return;
+    if (ParserIsErrorRaised()) return;
     if (!info.pointerToData || !info.pointerToData->value) return;
     for (i = 0; i < n; i++) {
         rnd.pointerToData = &(((ParserObjectRecordDataT*)(info.pointerToData->value))[i]);
         rnd.recPart = info.objPart->rec;
-        destroyRecData(rnd);
+        ParserDestroyObjectRecordWithData(&rnd);
     }
 }
 
-void destroyRecData(ParserObjectRecordWithDataT info)
+void ParserDestroyObjectRecordWithData(ParserObjectRecordWithDataT *info)
 {
     ParserObjectWithDataT tmp;
     int i;
-    if (!info.pointerToData) return;
-    for (i = 0; i < info.recPart->n; i++)
-        tmp.objPart = &(info.recPart->seq[i]);
-        tmp.pointerToData = &(info.pointerToData->data[i]);
+    if (info == NULL) return;
+    if (info->pointerToData == NULL) return;
+    for (i = 0; i < info->recPart->n; i++)
+        tmp.objPart = &(info->recPart->seq[i]);
+        tmp.pointerToData = &(info->pointerToData->data[i]);
         if (tmp.pointerToData) {
-            switch ((info.recPart->seq[i]).objKind) {
+            switch ((info->recPart->seq[i]).objKind) {
                 case PARSER_OBJECT_KIND_INTEGER:
                 case PARSER_OBJECT_KIND_FLOAT:
                 case PARSER_OBJECT_KIND_STRING:
@@ -1257,7 +1262,7 @@ void ParserValidateFormatDescription(
     E4C_CLOSE_CONTEXT
 
     finalize();
-    if (E4C_WAS_EXCEPTION_THROWN() || wasError())
+    if (E4C_WAS_EXCEPTION_THROWN() || ParserIsErrorRaised())
     {
         *error = AllocateBuffer(sizeof(ParserErrorT));
         copyErrToErr(*error, lastError);

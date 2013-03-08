@@ -72,16 +72,20 @@ typedef struct
 void exprDestructor(struct expr* a);
 void attrDestructor(ParserObjectAttrT* a);
 void objDestructor(ParserObjectT* a);
-void objRecordDestructor(ParserObjectRecordT* a);
+void ParserDestroyObjectRecord(ParserObjectRecordT* a);
 void parseErrorDestructor(ParserErrorT* a);
 
 // utilities
 int isInCharSet(char ch, char* desc); // return positive integer if in,
                                                   // negative if error, zero if not in
-ParserErrorT* getLastError(); // (!) copy global structure to result,
-int wasError();
+ParserErrorT* ParserGetLastError(); // (!) copy global structure to result,
+int ParserIsErrorRaised();
 const char* errorMessageByCode(int errCode);
-ParserObjectWithDataT findObject(const char* name, ParserObjectRecordWithDataT rec, int goUp);
+ParserObjectWithDataT ParserFindObject(
+    const char* name,
+    ParserObjectRecordWithDataT rec,
+    int goUp
+);
 int getSeqLen(ParserObjectWithDataT info);
 
 // important functions
@@ -103,7 +107,11 @@ int getErrCode(ParserErrorT* a);
 size_t getErrLine(ParserErrorT* a);
 size_t getErrPos(ParserErrorT* a);
 
-ParserObjectRecordWithDataT mallocRecord(ParserObjectRecordWithDataT info, int isRoot);
+ParserObjectRecordWithDataT* ParserAllocateObjectRecordWithData(
+    ParserObjectRecordWithDataT *info,
+    int isRoot
+);
+void ParserEvaluateIntRange(ParserObjectWithDataT info, int64_t* l, int64_t* r);
 int64_t evaluate(struct expr* e, ParserObjectWithDataT info);
 
 int64_t getFloatDig(ParserObjectWithDataT info);
@@ -111,7 +119,7 @@ int64_t getIntValue(ParserObjectWithDataT info);
 long double getFloatValue(ParserObjectWithDataT info);
 char* getStrValue(ParserObjectWithDataT info); // just a pointer, no copy
 
-void setIntValue(ParserObjectWithDataT info, const int64_t value);
+void ParserSetIntegerValue(ParserObjectWithDataT info, const int64_t value);
 void setFloatValue(ParserObjectWithDataT info, const long double value);
 void setStrValue(ParserObjectWithDataT info, const char* value); // copy value
 
@@ -124,7 +132,7 @@ void autoGenInt(ParserObjectWithDataT info);
 void autoGenFloat(ParserObjectWithDataT info);
 void autoGenStr(ParserObjectWithDataT info);
 
-void destroyRecData(ParserObjectRecordWithDataT info);
+void ParserDestroyObjectRecordWithData(ParserObjectRecordWithDataT *info);
 void destroySeqData(ParserObjectWithDataT info);
 
 // user should destroy stuctures, returned by procedures marked with (!),
