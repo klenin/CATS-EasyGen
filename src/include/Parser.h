@@ -115,13 +115,12 @@ void ParserEvaluateIntRange(ParserObjectWithDataT info, int64_t* l, int64_t* r);
 void ParserEvaluateLenRange(ParserObjectWithDataT info, int64_t* l, int64_t* r);
 int64_t evaluate(struct expr* e, ParserObjectWithDataT info);
 
-int64_t getFloatDig(ParserObjectWithDataT info);
+int64_t ParserGetFloatDigits(ParserObjectWithDataT info);
 int64_t getIntValue(ParserObjectWithDataT info);
 long double getFloatValue(ParserObjectWithDataT info);
 char* getStrValue(ParserObjectWithDataT info); // just a pointer, no copy
 
 void ParserSetIntegerValue(ParserObjectWithDataT info, const int64_t value);
-int64_t ParserGetFloatDigits(ParserObjectWithDataT info);
 void ParserSetFloatValue(ParserObjectWithDataT info, const long double value);
 void ParserSetStringValue(ParserObjectWithDataT info, const char* value); // copy value
 

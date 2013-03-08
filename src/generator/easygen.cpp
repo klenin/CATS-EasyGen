@@ -304,7 +304,8 @@ void prxObject::print()
             } else if (objk == PARSER_OBJECT_KIND_STRING) {
                 cout << getStrValue(a);
             } else if (objk == PARSER_OBJECT_KIND_FLOAT) {
-                cout << fixed << setprecision(getFloatDig(a)) << getFloatValue(a);
+                cout << fixed <<
+                    setprecision(ParserGetFloatDigits(a)) << getFloatValue(a);
             }
             genError::processParseError();
             wasSpaceChar = 0;

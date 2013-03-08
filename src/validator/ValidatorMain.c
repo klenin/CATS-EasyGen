@@ -168,7 +168,6 @@ static long double ValidatorValidateFloat(
             token->text, leftBound, rightBound);
     }
 
-    // TODO: Check digits?
     PARSER_CALL(ParserSetFloatValue(objectData, objectValue));
 
     return objectValue;

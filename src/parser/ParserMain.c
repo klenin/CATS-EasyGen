@@ -897,12 +897,6 @@ void ParserEvaluateLenRange(ParserObjectWithDataT info, int64_t* l, int64_t* r)
     ParserEvaluateGenericRange(info, PARSER_OBJECT_ATTR_LENGTH_RANGE, l, r);
 }
 
-int64_t getFloatDig(ParserObjectWithDataT info)
-{
-    return evaluate(
-        info.objPart->attrList[PARSER_OBJECT_ATTR_DIGITS].exVal1, info);
-}
-
 static int isObjectValid(
     ParserObjectWithDataT* info,
     ParserObjectKindT expectedKind
