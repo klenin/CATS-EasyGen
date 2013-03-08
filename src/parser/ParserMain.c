@@ -289,10 +289,10 @@ static void genParseError(int errCode)
     #endif
 }
 
-struct objWithData findObject(const char* name, struct recWithData rec, int goUp)
+ParserObjectWithDataT findObject(const char* name, ParserObjectRecordWithDataT rec, int goUp)
 {
     int i;
-    struct objWithData res;
+    ParserObjectWithDataT res;
     ParserObjectT* object;
     char* attrValue;
 
@@ -525,7 +525,7 @@ static struct expr* parseExpression1(int priority, int isFirst,
 {
     struct expr *res, *op;
     ParserObjectT* varObj;
-    struct recWithData tmp;
+    ParserObjectRecordWithDataT tmp;
     char ch;
     if (priority > priorityNumber) {
         switch (curToken->type) {
@@ -759,7 +759,7 @@ static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
     ParserObjectT* res;
     ParserObjectAttrT* attrList;
     char* name;
-    struct recWithData tmp;
+    ParserObjectRecordWithDataT tmp;
 
     if (!curToken) return NULL;
     if (curToken->type != ttObject) {
@@ -854,16 +854,16 @@ ParserObjectRecordT* parseObjRecord()
 }
 
 //-----------------------------data processing procedures----------------------
-struct recWithData mallocRecord(struct recWithData info, int isRoot)
+ParserObjectRecordWithDataT mallocRecord(ParserObjectRecordWithDataT info, int isRoot)
 {
     int i;
     if (!info.recPart->n) {info.pointerToData = 0; return info;}
     if (isRoot) {
-        info.pointerToData = AllocateBuffer(sizeof(struct recordData));
+        info.pointerToData = AllocateBuffer(sizeof(ParserObjectRecordDataT));
         info.pointerToData->parentData = 0;
     }
     info.pointerToData->data =
-        AllocateArray(info.recPart->n, sizeof(struct objData));
+        AllocateArray(info.recPart->n, sizeof(ParserObjectDataT));
     for (i = 0; i < info.recPart->n; i++) {
         info.pointerToData->data[i].value = 0;
         info.pointerToData->data[i].parentData = info.pointerToData;
@@ -871,7 +871,7 @@ struct recWithData mallocRecord(struct recWithData info, int isRoot)
     return info;
 }
 
-static void getIntLR(struct objWithData info, int64_t* l, int64_t* r)
+static void getIntLR(ParserObjectWithDataT info, int64_t* l, int64_t* r)
 {
     *l = evaluate(info.objPart->attrList[PARSER_OBJECT_ATTR_RANGE].exVal1,
         info);
@@ -881,14 +881,14 @@ static void getIntLR(struct objWithData info, int64_t* l, int64_t* r)
     else *r = *l;
 }
 
-int64_t getFloatDig(struct objWithData info)
+int64_t getFloatDig(ParserObjectWithDataT info)
 {
     return evaluate(
         info.objPart->attrList[PARSER_OBJECT_ATTR_DIGITS].exVal1, info);
 }
 
 static int isObjectValid(
-    struct objWithData* info,
+    ParserObjectWithDataT* info,
     ParserObjectKindT expectedKind
 )
 {
@@ -903,7 +903,7 @@ static int isObjectValid(
     return !0;
 }
 
-int64_t getIntValue(struct objWithData info)
+int64_t getIntValue(ParserObjectWithDataT info)
 {
     if (isObjectValid(&info, PARSER_OBJECT_KIND_INTEGER)) {
         return *((int64_t*)info.pointerToData->value);
@@ -911,7 +911,7 @@ int64_t getIntValue(struct objWithData info)
     return 0;
 }
 
-long double getFloatValue(struct objWithData info)
+long double getFloatValue(ParserObjectWithDataT info)
 {
     if (isObjectValid(&info, PARSER_OBJECT_KIND_FLOAT)) {
         return *((long double*)info.pointerToData->value);
@@ -919,7 +919,7 @@ long double getFloatValue(struct objWithData info)
     return 0;
 }
 
-char* getStrValue(struct objWithData info)
+char* getStrValue(ParserObjectWithDataT info)
 {
     if (isObjectValid(&info, PARSER_OBJECT_KIND_STRING)) {
         return (char*)(info.pointerToData->value);
@@ -927,7 +927,7 @@ char* getStrValue(struct objWithData info)
     return NULL;
 }
 
-void setIntValue(struct objWithData info, const int64_t value)
+void setIntValue(ParserObjectWithDataT info, const int64_t value)
 {
     if (info.objPart->objKind != PARSER_OBJECT_KIND_INTEGER) {
         genParseError(E_ASSIGN_NON_INT);
@@ -945,7 +945,7 @@ void setIntValue(struct objWithData info, const int64_t value)
     } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
 
-void setFloatValue(struct objWithData info, const long double value)
+void setFloatValue(ParserObjectWithDataT info, const long double value)
 {
     if (info.objPart->objKind != PARSER_OBJECT_KIND_FLOAT) {
         genParseError(E_ASSIGN_NON_FLOAT);
@@ -969,7 +969,7 @@ void setFloatValue(struct objWithData info, const long double value)
     } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
 
-void setStrValue(struct objWithData info, const char* value)
+void setStrValue(ParserObjectWithDataT info, const char* value)
 {
     int32_t i, n;
     int64_t l, r;
@@ -997,7 +997,7 @@ void setStrValue(struct objWithData info, const char* value)
     } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
 
-void autoGenInt(struct objWithData info)
+void autoGenInt(ParserObjectWithDataT info)
 {
     int64_t l, r, tmp;
     if (info.objPart->objKind != PARSER_OBJECT_KIND_INTEGER) {
@@ -1013,7 +1013,7 @@ void autoGenInt(struct objWithData info)
     }
 }
 
-void autoGenFloat(struct objWithData info)
+void autoGenFloat(ParserObjectWithDataT info)
 {
     if (info.objPart->objKind != PARSER_OBJECT_KIND_FLOAT) {
         genParseError(E_GENERATE_NON_FLOAT);
@@ -1032,7 +1032,7 @@ void autoGenFloat(struct objWithData info)
     }
 }
 
-void autoGenStr(struct objWithData info)
+void autoGenStr(ParserObjectWithDataT info)
 {
     char* res;
     int64_t i, l, r, rnd;
@@ -1054,7 +1054,7 @@ void autoGenStr(struct objWithData info)
     }
 }
 
-int getSeqLen(struct objWithData info)
+int getSeqLen(ParserObjectWithDataT info)
 {
     if (info.objPart->objKind != PARSER_OBJECT_KIND_SEQUENCE)
     {
@@ -1064,9 +1064,9 @@ int getSeqLen(struct objWithData info)
         info.objPart->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
 }
 
-void autoGenSeq(struct objWithData info)
+void autoGenSeq(ParserObjectWithDataT info)
 {
-    struct recWithData rnd;
+    ParserObjectRecordWithDataT rnd;
     int i;
     int64_t n = evaluate(
         info.objPart->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
@@ -1077,17 +1077,17 @@ void autoGenSeq(struct objWithData info)
     }
     byIndex(info, n);
     for (i = 0; i < n; i++) {
-        rnd.pointerToData = &(((struct recordData*)(info.pointerToData->value))[i]);
+        rnd.pointerToData = &(((ParserObjectRecordDataT*)(info.pointerToData->value))[i]);
         rnd.recPart = info.objPart->rec;
         autoGenRecord(rnd);
     }
 }
 
-void autoGenRecord(struct recWithData info)
+void autoGenRecord(ParserObjectRecordWithDataT info)
 {
     int i;
     ParserObjectKindT objk;
-    struct objWithData tmp;
+    ParserObjectWithDataT tmp;
     if (!info.pointerToData->data) {
         info = mallocRecord(info, 0);
     }
@@ -1107,12 +1107,12 @@ void autoGenRecord(struct recWithData info)
     }
 }
 
-int64_t evaluate(struct expr* e, struct objWithData info)
+int64_t evaluate(struct expr* e, ParserObjectWithDataT info)
 {
     int64_t res = 0;
     int64_t i, val1, val2;
-    struct recWithData rnd;
-    struct objWithData tmp;
+    ParserObjectRecordWithDataT rnd;
+    ParserObjectWithDataT tmp;
     if (e->op1) {
         val1 = evaluate(e->op1, info); val2 = evaluate(e->op2, info);
         switch (e->opCode) {
@@ -1141,17 +1141,17 @@ int64_t evaluate(struct expr* e, struct objWithData info)
     return res;
 }
 
-struct objWithData byName(struct recWithData info, const char* name)
+ParserObjectWithDataT byName(ParserObjectRecordWithDataT info, const char* name)
 {
     return findObject(name, info, 0);
 }
 
-struct recWithData byIndex(struct objWithData info, int64_t index)
+ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index)
 {
-    struct objData* data = info.pointerToData;
+    ParserObjectDataT* data = info.pointerToData;
     ParserObjectT* a = info.objPart;
-    struct recWithData res;
-    struct recordData* d, *tmp;
+    ParserObjectRecordWithDataT res;
+    ParserObjectRecordDataT* d, *tmp;
     int n = (int)evaluate(a->attrList[PARSER_OBJECT_ATTR_LENGTH].exVal1, info);
     int i;
     res.pointerToData = 0; res.recPart = 0;
@@ -1161,24 +1161,24 @@ struct recWithData byIndex(struct objWithData info, int64_t index)
         return res;
     }
     if (!data->value) {
-        data->value = AllocateArray(n, sizeof(struct recordData));
-        d = (struct recordData*)(data->value);
+        data->value = AllocateArray(n, sizeof(ParserObjectRecordDataT));
+        d = (ParserObjectRecordDataT*)(data->value);
         for (i = 0; i < n; i++) {
-            tmp = AllocateBuffer(sizeof(struct recordData));
-            memcpy(&(d[i]), tmp, sizeof(struct recordData));
+            tmp = AllocateBuffer(sizeof(ParserObjectRecordDataT));
+            memcpy(&(d[i]), tmp, sizeof(ParserObjectRecordDataT));
             d[i].data = 0; d[i].parentData = data;
         }
     }
     res.recPart = a->rec;
     //take 1-indexed value
-    res.pointerToData = &(((struct recordData*)(data->value))[index-1]);
+    res.pointerToData = &(((ParserObjectRecordDataT*)(data->value))[index-1]);
     if (!res.pointerToData->data) res = mallocRecord(res, 0);
     return res;
 }
 
-void destroySeqData(struct objWithData info)
+void destroySeqData(ParserObjectWithDataT info)
 {
-    struct recWithData rnd;
+    ParserObjectRecordWithDataT rnd;
     int i, n;
     if (info.objPart->objKind != PARSER_OBJECT_KIND_SEQUENCE) {
         genParseError(E_DESTROY_NON_SEQUENCE);
@@ -1189,15 +1189,15 @@ void destroySeqData(struct objWithData info)
     if (wasError()) return;
     if (!info.pointerToData || !info.pointerToData->value) return;
     for (i = 0; i < n; i++) {
-        rnd.pointerToData = &(((struct recordData*)(info.pointerToData->value))[i]);
+        rnd.pointerToData = &(((ParserObjectRecordDataT*)(info.pointerToData->value))[i]);
         rnd.recPart = info.objPart->rec;
         destroyRecData(rnd);
     }
 }
 
-void destroyRecData(struct recWithData info)
+void destroyRecData(ParserObjectRecordWithDataT info)
 {
-    struct objWithData tmp;
+    ParserObjectWithDataT tmp;
     int i;
     if (!info.pointerToData) return;
     for (i = 0; i < info.recPart->n; i++)

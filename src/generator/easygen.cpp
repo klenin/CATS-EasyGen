@@ -148,7 +148,7 @@ void testInfo::paramsToVars()
     for (map<string, string>::iterator i = params.begin(); i != params.end(); ++i) {
         if (i->first == randseedParamName) SetRandSeed(getIntParam(i->first));
         else {
-            objWithData tmp = findObject(i->first.c_str(), desc.a, 0);
+            ParserObjectWithDataT tmp = findObject(i->first.c_str(), desc.a, 0);
             if (tmp.objPart) {
                 switch (tmp.objPart->objKind) {
                     case PARSER_OBJECT_KIND_INTEGER:
@@ -187,7 +187,7 @@ void testInfo::autoGen()
 
 prxObject prxRecord::operator [](const string& name)
 {
-    objWithData tmp = byName(a, name.c_str());
+    ParserObjectWithDataT tmp = byName(a, name.c_str());
     genError::processParseError();
     if (tmp.objPart) return prxObject(tmp);
     else throw genError("object with name '" + name + "' not found");
@@ -198,7 +198,7 @@ void prxRecord::print()
     if ((!a.pointerToData || !a.pointerToData->data) && a.recPart->n)
         throw genError("uninitialized data while printing");
     for (int i = 0; i < a.recPart->n; i++) {
-        objWithData st;
+        ParserObjectWithDataT st;
         st.objPart = &(a.recPart->seq[i]);
         st.pointerToData = &(a.pointerToData->data[i]);
         prxObject tmp(st);
@@ -213,7 +213,7 @@ void prxRecord::autoGen()
 
 prxRecord prxObject::operator [] (int index)
 {
-    recWithData tmp = byIndex(a, index);
+    ParserObjectRecordWithDataT tmp = byIndex(a, index);
     genError::processParseError();
     return prxRecord(tmp);
 }

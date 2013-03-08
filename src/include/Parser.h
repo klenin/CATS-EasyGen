@@ -32,17 +32,16 @@ typedef struct
     struct ParserInternalObjectRecordT *rec, *parent;
 } ParserObjectT;
 
-struct objData
+typedef struct
 {
-    struct recordData* parentData;
+    struct ParserInternalObjectRecordDataT* parentData;
     void* value;
-};
+} ParserObjectDataT;
 
-struct recordData
+typedef struct ParserInternalObjectRecordDataT
 {
-    struct objData *data, *parentData;
-};
-
+    ParserObjectDataT *data, *parentData;
+} ParserObjectRecordDataT;
 
 typedef struct ParserInternalObjectRecordT
 {
@@ -51,17 +50,17 @@ typedef struct ParserInternalObjectRecordT
     struct ParserInternalObjectRecordT* parent;
 } ParserObjectRecordT;
 
-struct recWithData
+typedef struct
 {
     ParserObjectRecordT* recPart;
-    struct recordData* pointerToData;
-};
+    ParserObjectRecordDataT* pointerToData;
+} ParserObjectRecordWithDataT;
 
-struct objWithData
+typedef struct
 {
     ParserObjectT* objPart;
-    struct objData* pointerToData;
-};
+    ParserObjectDataT* pointerToData;
+} ParserObjectWithDataT;
 
 typedef struct
 {
@@ -82,8 +81,8 @@ int isInCharSet(char ch, char* desc); // return positive integer if in,
 ParserErrorT* getLastError(); // (!) copy global structure to result,
 int wasError();
 const char* errorMessageByCode(int errCode);
-struct objWithData findObject(const char* name, struct recWithData rec, int goUp);
-int getSeqLen(struct objWithData info);
+ParserObjectWithDataT findObject(const char* name, ParserObjectRecordWithDataT rec, int goUp);
+int getSeqLen(ParserObjectWithDataT info);
 
 // important functions
 void initialize(const char* buf);
@@ -104,29 +103,29 @@ int getErrCode(ParserErrorT* a);
 size_t getErrLine(ParserErrorT* a);
 size_t getErrPos(ParserErrorT* a);
 
-struct recWithData mallocRecord(struct recWithData info, int isRoot);
-int64_t evaluate(struct expr* e, struct objWithData info);
+ParserObjectRecordWithDataT mallocRecord(ParserObjectRecordWithDataT info, int isRoot);
+int64_t evaluate(struct expr* e, ParserObjectWithDataT info);
 
-int64_t getFloatDig(struct objWithData info);
-int64_t getIntValue(struct objWithData info);
-long double getFloatValue(struct objWithData info);
-char* getStrValue(struct objWithData info); // just a pointer, no copy
+int64_t getFloatDig(ParserObjectWithDataT info);
+int64_t getIntValue(ParserObjectWithDataT info);
+long double getFloatValue(ParserObjectWithDataT info);
+char* getStrValue(ParserObjectWithDataT info); // just a pointer, no copy
 
-void setIntValue(struct objWithData info, const int64_t value);
-void setFloatValue(struct objWithData info, const long double value);
-void setStrValue(struct objWithData info, const char* value); // copy value
+void setIntValue(ParserObjectWithDataT info, const int64_t value);
+void setFloatValue(ParserObjectWithDataT info, const long double value);
+void setStrValue(ParserObjectWithDataT info, const char* value); // copy value
 
-struct recWithData byIndex(struct objWithData info, int64_t index);
-struct objWithData byName(struct recWithData info, const char* name);
+ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index);
+ParserObjectWithDataT byName(ParserObjectRecordWithDataT info, const char* name);
 
-void autoGenRecord(struct recWithData info);
-void autoGenSeq(struct objWithData info);
-void autoGenInt(struct objWithData info);
-void autoGenFloat(struct objWithData info);
-void autoGenStr(struct objWithData info);
+void autoGenRecord(ParserObjectRecordWithDataT info);
+void autoGenSeq(ParserObjectWithDataT info);
+void autoGenInt(ParserObjectWithDataT info);
+void autoGenFloat(ParserObjectWithDataT info);
+void autoGenStr(ParserObjectWithDataT info);
 
-void destroyRecData(struct recWithData info);
-void destroySeqData(struct objWithData info);
+void destroyRecData(ParserObjectRecordWithDataT info);
+void destroySeqData(ParserObjectWithDataT info);
 
 // user should destroy stuctures, returned by procedures marked with (!),
 // user should also destroy all data by destroy...Data procedures
