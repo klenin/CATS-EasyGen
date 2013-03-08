@@ -7,11 +7,7 @@ static void CheckAllocation(void *buffer, size_t size)
 {
     if (buffer == NULL)
     {
-#ifdef C99
         throwf(NotEnoughMemoryException, "could not allocate %u bytes", size);
-#else
-        throw(NotEnoughMemoryException, "not enough memory");
-#endif
     }
 }
 
