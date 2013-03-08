@@ -104,14 +104,14 @@ void ValidatorTokenizerSetInput(FILE *handle)
                         return VTT_NEWLINE;
                     }
 
--?[0-9]+\.[0-9]+    {
-                        yypos += yyleng;
-                        return VTT_FLOAT;
-                    }
-
--?[0-9]+            {
+[-+]?[0-9]+         {
                         yypos += yyleng;
                         return VTT_INTEGER;
+                    }
+
+[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?  {
+                        yypos += yyleng;
+                        return VTT_FLOAT;
                     }
 
 [^ \n\t]+           {

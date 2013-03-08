@@ -949,7 +949,13 @@ void ParserSetIntegerValue(ParserObjectWithDataT info, const int64_t value)
     } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
 
-void setFloatValue(ParserObjectWithDataT info, const long double value)
+int64_t ParserGetFloatDigits(ParserObjectWithDataT info)
+{
+    return evaluate(
+        info.objPart->attrList[PARSER_OBJECT_ATTR_DIGITS].exVal1, info);
+}
+
+void ParserSetFloatValue(ParserObjectWithDataT info, const long double value)
 {
     if (info.objPart->objKind != PARSER_OBJECT_KIND_FLOAT) {
         genParseError(E_ASSIGN_NON_FLOAT);
@@ -962,8 +968,7 @@ void setFloatValue(ParserObjectWithDataT info, const long double value)
             genParseError(E_OUT_OF_RANGE);
             return;
         }
-        d = evaluate(
-            info.objPart->attrList[PARSER_OBJECT_ATTR_DIGITS].exVal1, info);
+        d = ParserGetFloatDigits(info);
         if (d < 0 || d > LDBL_DIG) {
             genParseError(E_INVALID_FRACTIONAL_PART);
             return;

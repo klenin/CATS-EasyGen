@@ -1,3 +1,5 @@
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,8 +22,7 @@
 
 DECLARE_VALIDATOR(ValidatorValidateNewline);
 DECLARE_VALIDATOR(ValidatorValidateSoftline);
-DECLARE_VALIDATOR(ValidatorValidateInteger);
-DECLARE_VALIDATOR(ValidatorValidateFloat);
+DECLARE_VALIDATOR(ValidatorValidateGenericNumber);
 DECLARE_VALIDATOR(ValidatorValidateString);
 DECLARE_VALIDATOR(ValidatorValidateSequence);
 DECLARE_VALIDATOR(ValidatorValidateEnd);
@@ -32,8 +33,8 @@ static void
 {
     ValidatorValidateNewline,
     ValidatorValidateSoftline,
-    ValidatorValidateInteger,
-    ValidatorValidateFloat,
+    ValidatorValidateGenericNumber,
+    ValidatorValidateGenericNumber,
     ValidatorValidateString,
     ValidatorValidateSequence,
     ValidatorValidateEnd
@@ -106,31 +107,94 @@ DECLARE_VALIDATOR(ValidatorValidateSoftline)
 {
 }
 
-DECLARE_VALIDATOR(ValidatorValidateInteger)
+static int64_t ValidatorValidateInteger(
+    ValidatorTokenizerTokenT *token,
+    int64_t leftBound,
+    int64_t rightBound
+)
 {
-    ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
-    char *objectName;
-    ParserObjectWithDataT objectData;
-    int64_t leftBound, rightBound;
     int64_t objectValue;
 
-    ValidatorAssertObjectType(object->objKind, token->type);
-    objectName = object->attrList[PARSER_OBJECT_ATTR_NAME].strVal;
-    PARSER_CALL(objectData = ParserFindObject(objectName, *dataTree, 0));
-    PARSER_CALL(ParserEvaluateIntRange(objectData, &leftBound, &rightBound));
     objectValue = strtoll(token->text, NULL, 10);
+    if (errno == ERANGE)
+    {
+        throwf(ValidatorException,
+            (objectValue == LLONG_MAX ?
+                "too big integer value %s":
+                "too small integer value %s"),
+            token->text);
+    }
+
     if (objectValue < leftBound || objectValue > rightBound)
     {
         throwf(ValidatorException, "%lld is not in range [%lld, %lld]",
             objectValue, leftBound, rightBound);
     }
-    PARSER_CALL(ParserSetIntegerValue(objectData, objectValue));
 
-    ValidatorTokenizerDestroyToken(token);
+    return objectValue;
 }
 
-DECLARE_VALIDATOR(ValidatorValidateFloat)
+static long double ValidatorValidateFloat(
+    ValidatorTokenizerTokenT *token,
+    int64_t leftBound,
+    int64_t rightBound
+)
 {
+    long double objectValue;
+
+    objectValue = strtold(token->text, NULL);
+    if (errno == ERANGE)
+    {
+        throwf(ValidatorException, "cannot convert %s to long double value",
+            token->text);
+    }
+
+    if (objectValue < leftBound || objectValue > rightBound)
+    {
+        throwf(ValidatorException, "%s is not in range [%lld, %lld]",
+            token->text, leftBound, rightBound);
+    }
+
+    return objectValue;
+}
+
+DECLARE_VALIDATOR(ValidatorValidateGenericNumber)
+{
+    ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
+    char *objectName;
+    ParserObjectWithDataT objectData;
+    int64_t leftBound, rightBound;
+
+    ValidatorAssertObjectType(object->objKind, token->type);
+    objectName = object->attrList[PARSER_OBJECT_ATTR_NAME].strVal;
+    PARSER_CALL(objectData = ParserFindObject(objectName, *dataTree, 0));
+    PARSER_CALL(ParserEvaluateIntRange(objectData, &leftBound, &rightBound));
+
+    switch (object->objKind)
+    {
+        case PARSER_OBJECT_KIND_INTEGER:
+        {
+            int64_t objectValue = ValidatorValidateInteger(
+                token, leftBound, rightBound);
+            PARSER_CALL(ParserSetIntegerValue(objectData, objectValue));
+            break;
+        }
+        case PARSER_OBJECT_KIND_FLOAT:
+        {
+            long double objectValue = ValidatorValidateFloat(
+                token, leftBound, rightBound);
+            // TODO: Check digits?
+            PARSER_CALL(ParserSetFloatValue(objectData, objectValue));
+            break;
+        }
+        default:
+        {
+            throwf(ValidatorException, "unexpected %s",
+                g_ParserObjectKind2Str[object->objKind]);
+        }
+    }
+
+    ValidatorTokenizerDestroyToken(token);
 }
 
 DECLARE_VALIDATOR(ValidatorValidateString)

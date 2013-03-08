@@ -237,7 +237,7 @@ prxObject& prxObject::operator = (const long double& value)
 {
     if (a.objPart->objKind != PARSER_OBJECT_KIND_FLOAT)
         throw genError("trying to assign float to non-float object");
-    setFloatValue(a, value);
+    ParserSetFloatValue(a, value);
     genError::processParseError();
     return *this;
 }

@@ -120,7 +120,8 @@ long double getFloatValue(ParserObjectWithDataT info);
 char* getStrValue(ParserObjectWithDataT info); // just a pointer, no copy
 
 void ParserSetIntegerValue(ParserObjectWithDataT info, const int64_t value);
-void setFloatValue(ParserObjectWithDataT info, const long double value);
+int64_t ParserGetFloatDigits(ParserObjectWithDataT info);
+void ParserSetFloatValue(ParserObjectWithDataT info, const long double value);
 void setStrValue(ParserObjectWithDataT info, const char* value); // copy value
 
 ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index);
