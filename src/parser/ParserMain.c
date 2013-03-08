@@ -69,7 +69,7 @@ void exprDestructor(struct expr* a)
     free(a);
 }
 
-static void attrDestructor1(struct attr* a)
+static void attrDestructor1(ParserObjectAttrT* a)
 {
     if (!a) return;
     free(a->attrName); free(a->strVal); free(a->charSetStr);
@@ -79,12 +79,12 @@ static void attrDestructor1(struct attr* a)
     }
 }
 
-void attrDestructor(struct attr* a)
+void attrDestructor(ParserObjectAttrT* a)
 {
     attrDestructor1(a); free(a);
 }
 
-void attrListDestructor(struct attr* attrList)
+void attrListDestructor(ParserObjectAttrT* attrList)
 {
     int i;
     if (!attrList) return;
@@ -152,17 +152,17 @@ static void allocWithCopyObjRecord(ParserObjectRecordT** a, ParserObjectRecordT*
     }
 }
 
-static void copyAttrToAttr(struct attr* a, struct attr* b);
+static void copyAttrToAttr(ParserObjectAttrT* a, ParserObjectAttrT* b);
 
-static void allocWithCopyAttrList(struct attr** a, struct attr* b, int n)
+static void allocWithCopyAttrList(ParserObjectAttrT** a, ParserObjectAttrT* b, int n)
 {
     int i;
     if (!b) {*a = 0; return;}
-    *a = AllocateArray(n, sizeof(struct attr));
+    *a = AllocateArray(n, sizeof(ParserObjectAttrT));
     for (i = 0; i < n; i++) copyAttrToAttr((*a) + i, b + i);
 }
 
-static void copyAttrToAttr(struct attr* a, struct attr* b)
+static void copyAttrToAttr(ParserObjectAttrT* a, ParserObjectAttrT* b)
 {
     a->charNum = b->charNum;
     memcpy(&(a->valid), &(b->valid), charNumber);
@@ -641,14 +641,14 @@ static void parseIntRange(struct expr** ex1, struct expr** ex2, ParserObjectReco
     }
 }
 
-static struct attr* parseAttr(ParserObjectRecordT* curSeq)
+static ParserObjectAttrT* parseAttr(ParserObjectRecordT* curSeq)
 {
-    struct attr* res;
+    ParserObjectAttrT* res;
     int i, j, k;
 
     if (!curToken || curToken->type != ttAttrName) return 0;
-    res = AllocateBuffer(sizeof(struct attr));
-    memset(res,0,sizeof(struct attr));
+    res = AllocateBuffer(sizeof(ParserObjectAttrT));
+    memset(res,0,sizeof(ParserObjectAttrT));
     res->attrName = AllocateBuffer(strlen(curToken->str) + 1);
     strcpy(res->attrName, curToken->str);
     moveToNextToken();
@@ -702,19 +702,19 @@ static struct attr* parseAttr(ParserObjectRecordT* curSeq)
     return res;
 }
 
-static struct attr* parseAttrList(
+static ParserObjectAttrT* parseAttrList(
     ParserObjectKindT objKind,
     ParserObjectRecordT* curSeq
 )
 {
     //it should eat semicolons too
-    struct attr *res = 0;
-    struct attr *curAttr;
+    ParserObjectAttrT *res = 0;
+    ParserObjectAttrT *curAttr;
     int bad = 0, i, n = 0;
     int vis[PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT];
 
     res = AllocateArray(PARSER_OBJECT_ATTRIBUTE_KINDS_COUNT,
-        sizeof(struct attr));
+        sizeof(ParserObjectAttrT));
     memset(vis, 0, sizeof(vis));
 
     while ((curAttr = parseAttr(curSeq))) {
@@ -757,7 +757,7 @@ static ParserObjectT* parseNextObject(ParserObjectRecordT* curSeq)
 {
     ParserObjectKindT objKind;
     ParserObjectT* res;
-    struct attr* attrList;
+    ParserObjectAttrT* attrList;
     char* name;
     struct recWithData tmp;
 

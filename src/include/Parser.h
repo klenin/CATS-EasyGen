@@ -15,7 +15,7 @@ struct expr
     struct expr *op1,*op2;
 };
 
-struct attr
+typedef struct
 {
     char* attrName;
     char* strVal;
@@ -23,12 +23,12 @@ struct attr
     int charNum;
     char valid[256];
     char* charSetStr;
-};
+} ParserObjectAttrT;
 
 typedef struct
 {
     ParserObjectKindT objKind;
-    struct attr* attrList;
+    ParserObjectAttrT* attrList;
     struct ParserInternalObjectRecordT *rec, *parent;
 } ParserObjectT;
 
@@ -71,7 +71,7 @@ typedef struct
 
 // all destructors free memory for object and it's internal structures
 void exprDestructor(struct expr* a);
-void attrDestructor(struct attr* a);
+void attrDestructor(ParserObjectAttrT* a);
 void objDestructor(ParserObjectT* a);
 void objRecordDestructor(ParserObjectRecordT* a);
 void parseErrorDestructor(ParserErrorT* a);
