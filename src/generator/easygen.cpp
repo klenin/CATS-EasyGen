@@ -255,7 +255,7 @@ prxObject::operator int64_t()
 {
     if (a.objPart->objKind != PARSER_OBJECT_KIND_INTEGER)
         throw genError("trying to get integer from non-int object");
-    int64_t res = getIntValue(a);
+    int64_t res = ParserGetIntegerValue(a);
     genError::processParseError();
     return res;
 }
@@ -269,7 +269,7 @@ prxObject::operator long double()
 {
     if (a.objPart->objKind != PARSER_OBJECT_KIND_FLOAT)
         throw genError("trying to get float from non-float object");
-    long double res = getFloatValue(a);
+    long double res = ParserGetFloatValue(a);
     genError::processParseError();
     return res;
 }
@@ -278,7 +278,7 @@ prxObject::operator string()
 {
     if (a.objPart->objKind != PARSER_OBJECT_KIND_STRING)
         throw genError("trying to get string from non-string object");
-    string res(getStrValue(a));
+    string res(ParserGetStringValue(a));
     genError::processParseError();
     return res;
 }
@@ -300,12 +300,12 @@ void prxObject::print()
         case PARSER_OBJECT_KIND_STRING:
             if (!wasSpaceChar) cout << defaultSpaceChar;
             if (objk == PARSER_OBJECT_KIND_INTEGER) {
-                cout << getIntValue(a);
+                cout << ParserGetIntegerValue(a);
             } else if (objk == PARSER_OBJECT_KIND_STRING) {
-                cout << getStrValue(a);
+                cout << ParserGetStringValue(a);
             } else if (objk == PARSER_OBJECT_KIND_FLOAT) {
                 cout << fixed <<
-                    setprecision(ParserGetFloatDigits(a)) << getFloatValue(a);
+                    setprecision(ParserGetFloatDigits(a)) << ParserGetFloatValue(a);
             }
             genError::processParseError();
             wasSpaceChar = 0;

@@ -99,6 +99,8 @@ void ParserValidateFormatDescription(
     ParserErrorT** error
 ); // (!)
 
+void ParserPrintDataRecord(ParserObjectRecordWithDataT *recData);
+
 const char* ParserGetErrorMessageByCode(int errCode);
 
 // mainly for cats web-server
@@ -116,9 +118,9 @@ void ParserEvaluateLenRange(ParserObjectWithDataT info, int64_t* l, int64_t* r);
 int64_t evaluate(struct expr* e, ParserObjectWithDataT info);
 
 int64_t ParserGetFloatDigits(ParserObjectWithDataT info);
-int64_t getIntValue(ParserObjectWithDataT info);
-long double getFloatValue(ParserObjectWithDataT info);
-char* getStrValue(ParserObjectWithDataT info); // just a pointer, no copy
+int64_t ParserGetIntegerValue(ParserObjectWithDataT info);
+long double ParserGetFloatValue(ParserObjectWithDataT info);
+char* ParserGetStringValue(ParserObjectWithDataT info); // just a pointer, no copy
 
 void ParserSetIntegerValue(ParserObjectWithDataT info, const int64_t value);
 void ParserSetFloatValue(ParserObjectWithDataT info, const long double value);

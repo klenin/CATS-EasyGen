@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "File.h"
+#include "Parser.h"
 #include "Validator.h"
 
 int main(int argc, char **argv)
@@ -10,6 +11,7 @@ int main(int argc, char **argv)
     char *inputFilename = NULL;
     char *formatFilename = NULL;
     char *formatDescription = NULL;
+    ParserObjectRecordWithDataT *data = NULL;
 
     if (argc < 3)
     {
@@ -21,7 +23,8 @@ int main(int argc, char **argv)
     formatFilename = argv[2];
 
     formatDescription = FileReadTextFile(formatFilename);
-    error = ValidatorValidate(inputFilename, formatDescription);
+    data = ValidatorValidate(inputFilename, formatDescription);
+    error = ValidatorGetLastError();
 
     if (error != NULL)
     {
@@ -35,6 +38,8 @@ int main(int argc, char **argv)
         }
         return EXIT_FAILURE;
     }
+
+    ParserPrintDataRecord(data);
 
     return EXIT_SUCCESS;
 }

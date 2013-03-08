@@ -12,8 +12,10 @@
 
 #include "Allocator.h"
 #include "Exceptions.h"
+#include "Numerics.h"
 #include "Parser.h"
 #include "ParserError.h"
+#include "ParserObjectRecordIterator.h"
 #include "Random.h"
 
 #define charNumber 256
@@ -913,7 +915,7 @@ static int isObjectValid(
     return !0;
 }
 
-int64_t getIntValue(ParserObjectWithDataT info)
+int64_t ParserGetIntegerValue(ParserObjectWithDataT info)
 {
     if (isObjectValid(&info, PARSER_OBJECT_KIND_INTEGER)) {
         return *((int64_t*)info.pointerToData->value);
@@ -921,7 +923,7 @@ int64_t getIntValue(ParserObjectWithDataT info)
     return 0;
 }
 
-long double getFloatValue(ParserObjectWithDataT info)
+long double ParserGetFloatValue(ParserObjectWithDataT info)
 {
     if (isObjectValid(&info, PARSER_OBJECT_KIND_FLOAT)) {
         return *((long double*)info.pointerToData->value);
@@ -929,7 +931,7 @@ long double getFloatValue(ParserObjectWithDataT info)
     return 0;
 }
 
-char* getStrValue(ParserObjectWithDataT info)
+char* ParserGetStringValue(ParserObjectWithDataT info)
 {
     if (isObjectValid(&info, PARSER_OBJECT_KIND_STRING)) {
         return (char*)(info.pointerToData->value);
@@ -1151,7 +1153,7 @@ int64_t evaluate(struct expr* e, ParserObjectWithDataT info)
         rnd.recPart = info.objPart->parent;
         tmp = ParserFindObject(e->varName, rnd, 1);
         if (!tmp.objPart) genParseError(B_UNKNOWN_IDENTIFIER);
-        res = getIntValue(tmp);
+        res = ParserGetIntegerValue(tmp);
     } else res = e->intConst;
     return res;
 }
@@ -1283,6 +1285,80 @@ void ParserValidateFormatDescription(
     {
         *error = AllocateBuffer(sizeof(ParserErrorT));
         copyErrToErr(*error, lastError);
+    }
+}
+
+static void ParserPrintDataObject(ParserObjectWithDataT *objData)
+{
+    static int wasSpaceChar = 1;
+    ParserObjectKindT objKind = objData->objPart->objKind;
+
+    switch (objKind)
+    {
+        case PARSER_OBJECT_KIND_NEWLINE:
+        case PARSER_OBJECT_KIND_SOFTLINE:
+        {
+            printf("\n");
+            wasSpaceChar = 1;
+            break;
+        }
+        case PARSER_OBJECT_KIND_INTEGER:
+        case PARSER_OBJECT_KIND_FLOAT:
+        case PARSER_OBJECT_KIND_STRING:
+        {
+            if (!wasSpaceChar)
+            {
+                printf(" ");
+            }
+            if (objKind == PARSER_OBJECT_KIND_INTEGER)
+            {
+                printf("%" PRId64, ParserGetIntegerValue(*objData));
+            }
+            else if (objKind == PARSER_OBJECT_KIND_STRING)
+            {
+                printf("%s", ParserGetStringValue(*objData));
+            }
+            else if (objKind == PARSER_OBJECT_KIND_FLOAT)
+            {
+                printf("%.*lf",
+                    (uint32_t)ParserGetFloatDigits(*objData),
+                    (double)ParserGetFloatValue(*objData));
+            }
+            wasSpaceChar = 0;
+            break;
+        }
+        case PARSER_OBJECT_KIND_SEQUENCE:
+        {
+            int sequenceLength = ParserGetSequenceLength(*objData);
+            int i;
+            for (i = 1; i <= sequenceLength; ++i)
+            {
+                ParserObjectRecordWithDataT recData =
+                    ParserGetSequenceElement(*objData, i);
+                ParserPrintDataRecord(&recData);
+            }
+            break;
+        }
+        default:
+        {
+            break;
+        }
+    }
+}
+
+void ParserPrintDataRecord(ParserObjectRecordWithDataT *recData)
+{
+    ParserObjectT *object = NULL;
+    ParserObjectRecordIteratorT *iterator = NULL;
+    for (iterator = ParserObjectRecordGetFrontElement(recData->recPart);
+                    ParserObjectRecordIteratorIsValid(iterator);
+                    ParserObjectRecordIteratorAdvance(iterator))
+    {
+        ParserObjectWithDataT objData;
+        object = ParserObjectRecordIteratorDereference(iterator);
+        objData.objPart = object;
+        objData.pointerToData = &(recData->pointerToData->data[iterator->index]);
+        ParserPrintDataObject(&objData);
     }
 }
 

@@ -1,6 +1,11 @@
 #include "Numerics.h"
 
 #if defined (_MSC_VER)
+
+#include <errno.h>
+#include <math.h>
+#include <stdlib.h>
+
 long double strtold(char* str, char** dummy)
 {
     int retval;
@@ -15,4 +20,5 @@ long double strtold(char* str, char** dummy)
 
     return value.x;
 }
-#endif
+
+#endif // defined (_MSC_VER)

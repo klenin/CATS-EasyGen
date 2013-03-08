@@ -1,6 +1,5 @@
 #include <ctype.h>
 #include <errno.h>
-#include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -316,7 +315,10 @@ static ParserObjectRecordT *ValidatorParseFormatDescription(
     return tree;
 }
 
-ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatDescription)
+ParserObjectRecordWithDataT *ValidatorValidate(
+    char *inputFilename,
+    char *formatDescription
+)
 {
     E4C_DECLARE_CONTEXT_STATUS
 
@@ -354,9 +356,6 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatDescription)
     }
     finally
     {
-        ParserDestroyObjectRecordWithData(dataTree);
-        free(dataTree);
-        ParserDestroyObjectRecord(formatTree);
         if (inputHandle != NULL)
         {
             fclose(inputHandle);
@@ -366,7 +365,11 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatDescription)
 
     if (E4C_WAS_EXCEPTION_THROWN() || ValidatorIsErrorRaised())
     {
-        return ValidatorGetLastError();
+        ParserDestroyObjectRecordWithData(dataTree);
+        free(dataTree);
+        ParserDestroyObjectRecord(formatTree);
+        return NULL;
     }
-    return NULL;
+
+    return dataTree;
 }
