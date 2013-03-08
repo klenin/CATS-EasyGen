@@ -3,7 +3,6 @@
 
 #include "Allocator.h"
 #include "Exceptions.h"
-#include "LanguageStandard.h"
 
 FILE *FileOpen(const char *filename, const char *mode)
 {

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "File.h"
 #include "Validator.h"
 
 int main(int argc, char **argv)
@@ -8,6 +9,7 @@ int main(int argc, char **argv)
     ValidatorErrorT *error = NULL;
     char *inputFilename = NULL;
     char *formatFilename = NULL;
+    char *formatDescription = NULL;
 
     if (argc < 3)
     {
@@ -17,7 +19,9 @@ int main(int argc, char **argv)
 
     inputFilename = argv[1];
     formatFilename = argv[2];
-    error = ValidatorValidate(inputFilename, formatFilename);
+
+    formatDescription = FileReadTextFile(formatFilename);
+    error = ValidatorValidate(inputFilename, formatDescription);
 
     if (error != NULL)
     {

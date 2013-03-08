@@ -3,6 +3,6 @@
 
 #include "ValidatorErrors.h"
 
-ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename);
+ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatDescription);
 
 #endif // __VALIDATOR_H__

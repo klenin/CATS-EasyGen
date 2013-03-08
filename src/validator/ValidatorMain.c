@@ -314,12 +314,11 @@ static ParserObjectRecordT *ValidatorParseFormatDescription(
     return tree;
 }
 
-ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
+ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatDescription)
 {
     E4C_DECLARE_CONTEXT_STATUS
 
     FILE *inputHandle = NULL;
-    char *formatText = NULL;
     ParserObjectRecordT *formatTree = NULL;
     ParserObjectRecordWithDataT *dataTree = NULL;
 
@@ -328,8 +327,7 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
     {
         inputHandle = FileOpen(inputFilename, "r");
         ValidatorTokenizerSetInput(inputHandle);
-        formatText = FileReadTextFile(formatFilename);
-        formatTree = ValidatorParseFormatDescription(formatText);
+        formatTree = ValidatorParseFormatDescription(formatDescription);
 
         dataTree = AllocateBuffer(sizeof(ParserObjectRecordWithDataT));
         dataTree->pointerToData = NULL;
@@ -354,7 +352,6 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
     }
     finally
     {
-        free(formatText);
         ParserDestroyObjectRecordWithData(dataTree);
         free(dataTree);
         ParserDestroyObjectRecord(formatTree);
