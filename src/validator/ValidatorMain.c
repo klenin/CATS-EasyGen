@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -22,8 +23,7 @@
 
 DECLARE_VALIDATOR(ValidatorValidateNewline);
 DECLARE_VALIDATOR(ValidatorValidateSoftline);
-DECLARE_VALIDATOR(ValidatorValidateGenericNumber);
-DECLARE_VALIDATOR(ValidatorValidateString);
+DECLARE_VALIDATOR(ValidatorValidateGenericObject);
 DECLARE_VALIDATOR(ValidatorValidateSequence);
 DECLARE_VALIDATOR(ValidatorValidateEnd);
 
@@ -33,9 +33,9 @@ static void
 {
     ValidatorValidateNewline,
     ValidatorValidateSoftline,
-    ValidatorValidateGenericNumber,
-    ValidatorValidateGenericNumber,
-    ValidatorValidateString,
+    ValidatorValidateGenericObject,
+    ValidatorValidateGenericObject,
+    ValidatorValidateGenericObject,
     ValidatorValidateSequence,
     ValidatorValidateEnd
 };
@@ -107,12 +107,12 @@ DECLARE_VALIDATOR(ValidatorValidateSoftline)
 {
 }
 
-static int64_t ValidatorValidateInteger(
+static void ValidatorValidateInteger(
     ValidatorTokenizerTokenT *token,
-    int64_t leftBound,
-    int64_t rightBound
+    ParserObjectWithDataT objectData
 )
 {
+    int64_t leftBound, rightBound;
     int64_t objectValue;
 
     objectValue = strtoll(token->text, NULL, 10);
@@ -125,21 +125,22 @@ static int64_t ValidatorValidateInteger(
             token->text);
     }
 
+    PARSER_CALL(ParserEvaluateIntRange(objectData, &leftBound, &rightBound));
     if (objectValue < leftBound || objectValue > rightBound)
     {
         throwf(ValidatorException, "%lld is not in range [%lld, %lld]",
             objectValue, leftBound, rightBound);
     }
 
-    return objectValue;
+    PARSER_CALL(ParserSetIntegerValue(objectData, objectValue));
 }
 
 static long double ValidatorValidateFloat(
     ValidatorTokenizerTokenT *token,
-    int64_t leftBound,
-    int64_t rightBound
+    ParserObjectWithDataT objectData
 )
 {
+    int64_t leftBound, rightBound;
     long double objectValue;
 
     objectValue = strtold(token->text, NULL);
@@ -149,42 +150,83 @@ static long double ValidatorValidateFloat(
             token->text);
     }
 
+    PARSER_CALL(ParserEvaluateIntRange(objectData, &leftBound, &rightBound));
     if (objectValue < leftBound || objectValue > rightBound)
     {
         throwf(ValidatorException, "%s is not in range [%lld, %lld]",
             token->text, leftBound, rightBound);
     }
 
+    // TODO: Check digits?
+    PARSER_CALL(ParserSetFloatValue(objectData, objectValue));
+
     return objectValue;
 }
 
-DECLARE_VALIDATOR(ValidatorValidateGenericNumber)
+static char *ValidatorValidateString(
+    ValidatorTokenizerTokenT *token,
+    ParserObjectWithDataT objectData
+)
+{
+    char *objectValue = NULL;
+    char *validCharacters = NULL;
+    int64_t leftBound, rightBound;
+    int64_t valueLength = strlen(token->text);
+    int32_t i;
+
+    PARSER_CALL(ParserEvaluateLenRange(objectData, &leftBound, &rightBound));
+    if (valueLength < leftBound || valueLength > rightBound)
+    {
+        throwf(ValidatorException, "string length %lld is not in range [%lld, %lld]",
+            valueLength, leftBound, rightBound);
+    }
+
+    validCharacters = objectData.objPart->attrList[PARSER_OBJECT_ATTR_CHARS].valid;
+    for (i = 0; i < valueLength; ++i)
+    {
+        unsigned char character = token->text[i];
+        if (!validCharacters[character])
+        {
+            throwf(ValidatorException,
+                (isprint(character) ?
+                    "invalid character '%c' on position %u":
+                    "invalid character \\%u on position %u"),
+                character, i + 1);
+        }
+    }
+
+    objectValue = AllocateBuffer(valueLength);
+    strcpy(objectValue, token->text);
+    PARSER_CALL(ParserSetStringValue(objectData, objectValue));
+
+    return objectValue;
+}
+
+DECLARE_VALIDATOR(ValidatorValidateGenericObject)
 {
     ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
     char *objectName;
     ParserObjectWithDataT objectData;
-    int64_t leftBound, rightBound;
 
     ValidatorAssertObjectType(object->objKind, token->type);
     objectName = object->attrList[PARSER_OBJECT_ATTR_NAME].strVal;
-    PARSER_CALL(objectData = ParserFindObject(objectName, *dataTree, 0));
-    PARSER_CALL(ParserEvaluateIntRange(objectData, &leftBound, &rightBound));
+    PARSER_CALL(objectData = ParserFindObjectByName(*dataTree, objectName));
 
     switch (object->objKind)
     {
         case PARSER_OBJECT_KIND_INTEGER:
         {
-            int64_t objectValue = ValidatorValidateInteger(
-                token, leftBound, rightBound);
-            PARSER_CALL(ParserSetIntegerValue(objectData, objectValue));
+            ValidatorValidateInteger(token, objectData);
             break;
         }
         case PARSER_OBJECT_KIND_FLOAT:
         {
-            long double objectValue = ValidatorValidateFloat(
-                token, leftBound, rightBound);
-            // TODO: Check digits?
-            PARSER_CALL(ParserSetFloatValue(objectData, objectValue));
+            ValidatorValidateFloat(token, objectData);
+            break;
+        }
+        case PARSER_OBJECT_KIND_STRING:
+        {
+            ValidatorValidateString(token, objectData);
             break;
         }
         default:
@@ -195,10 +237,6 @@ DECLARE_VALIDATOR(ValidatorValidateGenericNumber)
     }
 
     ValidatorTokenizerDestroyToken(token);
-}
-
-DECLARE_VALIDATOR(ValidatorValidateString)
-{
 }
 
 DECLARE_VALIDATOR(ValidatorValidateSequence)
@@ -263,7 +301,9 @@ ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatFilename)
     catch (ValidatorException)
     {
         ValidatorRaiseErrorEx(
-            e4c_get_exception()->message, yycurline(), yycurpos());
+            e4c_get_exception()->message,
+            ValidatorTokenizerGetCurrentLine(),
+            ValidatorTokenizerGetCurrentPosition());
     }
     catch (RuntimeException)
     {

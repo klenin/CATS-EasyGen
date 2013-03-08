@@ -33,4 +33,7 @@ void ValidatorTokenizerDestroyToken(ValidatorTokenizerTokenT *token);
 // Set data source for tokenizer (default is stdin).
 void ValidatorTokenizerSetInput(FILE *handle);
 
+int32_t ValidatorTokenizerGetCurrentLine();
+int32_t ValidatorTokenizerGetCurrentPosition();
+
 #endif // __VALIDATOR_TOKENIZER_H__

@@ -875,14 +875,26 @@ ParserObjectRecordWithDataT* ParserAllocateObjectRecordWithData(
     return info;
 }
 
+static void ParserEvaluateGenericRange(
+    ParserObjectWithDataT info,
+    ParserObjectAttributeKindT attrKind,
+    int64_t* l,
+    int64_t* r
+)
+{
+    ParserObjectAttrT attr = info.objPart->attrList[attrKind];
+    *l = evaluate(attr.exVal1, info);
+    *r = (attr.exVal2 != NULL) ? evaluate(attr.exVal2, info): *l;
+}
+
 void ParserEvaluateIntRange(ParserObjectWithDataT info, int64_t* l, int64_t* r)
 {
-    *l = evaluate(info.objPart->attrList[PARSER_OBJECT_ATTR_RANGE].exVal1,
-        info);
-    if (info.objPart->attrList[PARSER_OBJECT_ATTR_RANGE].exVal2)
-        *r = evaluate(info.objPart->attrList[PARSER_OBJECT_ATTR_RANGE].exVal2,
-            info);
-    else *r = *l;
+    ParserEvaluateGenericRange(info, PARSER_OBJECT_ATTR_RANGE, l, r);
+}
+
+void ParserEvaluateLenRange(ParserObjectWithDataT info, int64_t* l, int64_t* r)
+{
+    ParserEvaluateGenericRange(info, PARSER_OBJECT_ATTR_LENGTH_RANGE, l, r);
 }
 
 int64_t getFloatDig(ParserObjectWithDataT info)
@@ -978,7 +990,7 @@ void ParserSetFloatValue(ParserObjectWithDataT info, const long double value)
     } else genParseError(E_VALUE_ALREADY_DEFINED);
 }
 
-void setStrValue(ParserObjectWithDataT info, const char* value)
+void ParserSetStringValue(ParserObjectWithDataT info, const char* value)
 {
     int32_t i, n;
     int64_t l, r;
@@ -988,7 +1000,7 @@ void setStrValue(ParserObjectWithDataT info, const char* value)
     }
     if (!info.pointerToData->value) {
         n = (int32_t)strlen(value);
-        ParserEvaluateIntRange(info, &l, &r);
+        ParserEvaluateLenRange(info, &l, &r);
         if (ParserIsErrorRaised()) return;
         if (n < l || n > r) {
             genParseError(E_INVALID_STRING_LENGTH);
@@ -1150,7 +1162,10 @@ int64_t evaluate(struct expr* e, ParserObjectWithDataT info)
     return res;
 }
 
-ParserObjectWithDataT byName(ParserObjectRecordWithDataT info, const char* name)
+ParserObjectWithDataT ParserFindObjectByName(
+    ParserObjectRecordWithDataT info,
+    const char* name
+)
 {
     return ParserFindObject(name, info, 0);
 }

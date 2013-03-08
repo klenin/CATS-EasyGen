@@ -30,12 +30,12 @@ static int yyeof = 0;
 int32_t yyline = 0;
 int32_t yypos = 0;
 
-int32_t yycurline()
+int32_t ValidatorTokenizerGetCurrentLine()
 {
     return yyline + 1;
 }
 
-int32_t yycurpos()
+int32_t ValidatorTokenizerGetCurrentPosition()
 {
     return yypos - (yypos > 0 ? yyleng: 0) + 1;
 }
@@ -71,8 +71,8 @@ ValidatorTokenizerTokenT *ValidatorTokenizerNextToken()
     yyeof = token->type == VTT_EOF;
     token->text = yytoktextcopy();
     token->length = yytoklen();
-    token->line = yycurline();
-    token->pos = yycurpos();
+    token->line = ValidatorTokenizerGetCurrentLine();
+    token->pos = ValidatorTokenizerGetCurrentPosition();
     return token;
 }
 

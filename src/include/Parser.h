@@ -112,6 +112,7 @@ ParserObjectRecordWithDataT* ParserAllocateObjectRecordWithData(
     int isRoot
 );
 void ParserEvaluateIntRange(ParserObjectWithDataT info, int64_t* l, int64_t* r);
+void ParserEvaluateLenRange(ParserObjectWithDataT info, int64_t* l, int64_t* r);
 int64_t evaluate(struct expr* e, ParserObjectWithDataT info);
 
 int64_t getFloatDig(ParserObjectWithDataT info);
@@ -122,10 +123,10 @@ char* getStrValue(ParserObjectWithDataT info); // just a pointer, no copy
 void ParserSetIntegerValue(ParserObjectWithDataT info, const int64_t value);
 int64_t ParserGetFloatDigits(ParserObjectWithDataT info);
 void ParserSetFloatValue(ParserObjectWithDataT info, const long double value);
-void setStrValue(ParserObjectWithDataT info, const char* value); // copy value
+void ParserSetStringValue(ParserObjectWithDataT info, const char* value); // copy value
 
 ParserObjectRecordWithDataT byIndex(ParserObjectWithDataT info, int64_t index);
-ParserObjectWithDataT byName(ParserObjectRecordWithDataT info, const char* name);
+ParserObjectWithDataT ParserFindObjectByName(ParserObjectRecordWithDataT info, const char* name);
 
 void autoGenRecord(ParserObjectRecordWithDataT info);
 void autoGenSeq(ParserObjectWithDataT info);

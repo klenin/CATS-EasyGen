@@ -1,0 +1,1 @@
+string name = s, lenrange = [100, 1000], chars = {a-z};

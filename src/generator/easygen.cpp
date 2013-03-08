@@ -187,7 +187,7 @@ void testInfo::autoGen()
 
 prxObject prxRecord::operator [](const string& name)
 {
-    ParserObjectWithDataT tmp = byName(a, name.c_str());
+    ParserObjectWithDataT tmp = ParserFindObjectByName(a, name.c_str());
     genError::processParseError();
     if (tmp.objPart) return prxObject(tmp);
     else throw genError("object with name '" + name + "' not found");
@@ -246,7 +246,7 @@ prxObject& prxObject::operator = (const string& value)
 {
     if (a.objPart->objKind != PARSER_OBJECT_KIND_STRING)
         throw genError("trying to assign string to non-string object");
-    setStrValue(a, value.c_str());
+    ParserSetStringValue(a, value.c_str());
     genError::processParseError();
     return *this;
 }
