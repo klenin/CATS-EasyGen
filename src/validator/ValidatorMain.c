@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,7 +140,8 @@ static void ValidatorValidateInteger(
     PARSER_CALL(ParserEvaluateIntRange(objectData, &leftBound, &rightBound));
     if (objectValue < leftBound || objectValue > rightBound)
     {
-        throwf(ValidatorException, "%lld is not in range [%lld, %lld]",
+        throwf(ValidatorException,
+            "%" PRId64 "is not in range [%" PRId64 ", %" PRId64 "]",
             objectValue, leftBound, rightBound);
     }
 
@@ -164,7 +166,8 @@ static long double ValidatorValidateFloat(
     PARSER_CALL(ParserEvaluateIntRange(objectData, &leftBound, &rightBound));
     if (objectValue < leftBound || objectValue > rightBound)
     {
-        throwf(ValidatorException, "%s is not in range [%lld, %lld]",
+        throwf(ValidatorException,
+            "%s is not in range [%" PRId64 ", %" PRId64 "]",
             token->text, leftBound, rightBound);
     }
 
@@ -188,7 +191,7 @@ static char *ValidatorValidateString(
     if (valueLength < leftBound || valueLength > rightBound)
     {
         throwf(ValidatorException,
-            "string length %lld is not in range [%lld, %lld]",
+            "string length %" PRId64 " is not in range [%" PRId64 ", %" PRId64 "]",
             valueLength, leftBound, rightBound);
     }
 
