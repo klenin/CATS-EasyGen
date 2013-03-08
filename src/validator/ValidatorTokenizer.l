@@ -26,9 +26,11 @@ int yywrap(void)
 }
 
 static int yyeof = 0;
+static int yyrewind = 0;
 
 int32_t yyline = 0;
 int32_t yypos = 0;
+ValidatorTokenizerTokenT *yycurrenttoken = NULL;
 
 int32_t ValidatorTokenizerGetCurrentLine()
 {
@@ -57,6 +59,11 @@ char* yytoktextcopy()
     return token;
 }
 
+void ValidatorTokenizerRewind()
+{
+    yyrewind = 1;
+}
+
 ValidatorTokenizerTokenT *ValidatorTokenizerNextToken()
 {
     ValidatorTokenizerTokenT *token;
@@ -66,6 +73,12 @@ ValidatorTokenizerTokenT *ValidatorTokenizerNextToken()
         return NULL;
     }
 
+    if (yyrewind)
+    {
+        yyrewind = 0;
+        return yycurrenttoken;
+    }
+
     token = AllocateBuffer(sizeof(ValidatorTokenizerTokenT));
     token->type = yylex();
     yyeof = token->type == VTT_EOF;
@@ -73,6 +86,7 @@ ValidatorTokenizerTokenT *ValidatorTokenizerNextToken()
     token->length = yytoklen();
     token->line = ValidatorTokenizerGetCurrentLine();
     token->pos = ValidatorTokenizerGetCurrentPosition();
+    yycurrenttoken = token;
     return token;
 }
 

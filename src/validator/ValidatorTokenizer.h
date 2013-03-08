@@ -27,6 +27,8 @@ extern const char* g_ValidatorTokenizerTokenType2Str[VTT_COUNT];
 // Allocates memory for the next token and returns pointer to it.
 ValidatorTokenizerTokenT *ValidatorTokenizerNextToken();
 
+void ValidatorTokenizerRewind();
+
 // Destroys token structure.
 void ValidatorTokenizerDestroyToken(ValidatorTokenizerTokenT *token);
 

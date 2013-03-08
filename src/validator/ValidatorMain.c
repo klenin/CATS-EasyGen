@@ -44,11 +44,11 @@ static const ValidatorTokenizerTokenTypeT
     g_ParserObject2ValidatorToken[PARSER_OBJECT_KINDS_COUNT] =
 {
     VTT_NEWLINE, // PARSER_OBJECT_KIND_NEWLINE
-    0,           // PARSER_OBJECT_KIND_SOFTLINE
+    0,           // PARSER_OBJECT_KIND_SOFTLINE (dummy value)
     VTT_INTEGER, // PARSER_OBJECT_KIND_INTEGER
     VTT_FLOAT,   // PARSER_OBJECT_KIND_FLOAT
     VTT_STRING,  // PARSER_OBJECT_KIND_STRING
-    0,           // PARSER_OBJECT_KIND_SEQUENCE
+    0,           // PARSER_OBJECT_KIND_SEQUENCE (dummy value)
     VTT_EOF      // PARSER_OBJECT_KIND_END
 };
 
@@ -105,6 +105,17 @@ DECLARE_VALIDATOR(ValidatorValidateNewline)
 
 DECLARE_VALIDATOR(ValidatorValidateSoftline)
 {
+    ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
+    if (VTT_NEWLINE == token->type)
+    {
+        // Skip newline.
+        ValidatorTokenizerDestroyToken(token);
+    }
+    else
+    {
+        // No newline found, rewind tokenizer.
+        ValidatorTokenizerRewind();
+    }
 }
 
 static void ValidatorValidateInteger(

@@ -1,0 +1,3 @@
+newline;
+softline;
+integer name = N, range = [1, 10];
