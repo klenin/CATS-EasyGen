@@ -107,33 +107,39 @@ void ValidatorTokenizerSetInput(FILE *handle)
 
 %}
 
+DIG [0-9]
+SGN [-+]
+NUM {SGN}?{DIG}+
+EXP [Ee]{NUM}
+NWL \r\n|\n
+
 %%
-[ \t]+              {
-                        yypos += yyleng;
-                    }
+[ \t]+ {
+    yypos += yyleng;
+}
 
-\r|\n|\r\n          {
-                        yyline++;
-                        yypos = 0;
-                        return VTT_NEWLINE;
-                    }
+{NWL} {
+    yyline++;
+    yypos = 0;
+    return VTT_NEWLINE;
+}
 
-[-+]?[0-9]+         {
-                        yypos += yyleng;
-                        return VTT_INTEGER;
-                    }
+{NUM}  {
+     yypos += yyleng;
+     return VTT_INTEGER;
+}
 
-[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?  {
-                        yypos += yyleng;
-                        return VTT_FLOAT;
-                    }
+{NUM}((\.{DIG}+)|{EXP}|(\.{DIG}+{EXP})) {
+    yypos += yyleng;
+    return VTT_FLOAT;
+}
 
-[^ \n\t]+           {
-                        yypos += yyleng;
-                        return VTT_STRING;
-                    }
+[^ \r\n\t]+ {
+    yypos += yyleng;
+    return VTT_STRING;
+}
 
-<<EOF>>             {
-                        return VTT_EOF;
-                    }
+<<EOF>>	{
+    return VTT_EOF;
+}
 %%

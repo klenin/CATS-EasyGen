@@ -20,7 +20,7 @@ void ValidatorRaiseError(const char *message)
     if (!ValidatorIsErrorRaised())
     {
         LastError = AllocateBuffer(sizeof(ValidatorErrorT));
-        LastError->message = AllocateBuffer(strlen(message));
+        LastError->message = AllocateBuffer(strlen(message) + 1);
         strcpy(LastError->message, message);
         LastError->line = -1;
         LastError->pos = -1;

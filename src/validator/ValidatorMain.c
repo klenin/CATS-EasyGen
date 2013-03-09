@@ -59,7 +59,7 @@ static void ValidatorProcessParserErrorEx(ParserErrorT *error)
     size_t messageLength =
         strlen(PARSER_ERROR_PREFIX) + strlen(parserMessage);
 
-    finalMessage = AllocateBuffer(messageLength);
+    finalMessage = AllocateBuffer(messageLength + 1);
     sprintf(finalMessage, PARSER_ERROR_PREFIX"%s", parserMessage);
     ValidatorRaiseErrorEx(finalMessage, error->line, error->pos);
     throw(ParserException, finalMessage);
@@ -140,7 +140,7 @@ static void ValidatorValidateInteger(
     if (objectValue < leftBound || objectValue > rightBound)
     {
         throwf(ValidatorException,
-            "%" PRId64 "is not in range [%" PRId64 ", %" PRId64 "]",
+            "%" PRId64 " is not in range [%" PRId64 ", %" PRId64 "]",
             objectValue, leftBound, rightBound);
     }
 
