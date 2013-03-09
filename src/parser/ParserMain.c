@@ -419,7 +419,6 @@ static void moveToNextToken()
                 i = getDelimVal(ch);
                 moveToNextChar();
                 if (i != -1) {
-                    curToken = AllocateBuffer(sizeof(struct token));
                     curToken = newToken(line1, pos1, oldPos, bufPos);
                     curToken->type = ttDelim; curToken->value = i;
                     return;
