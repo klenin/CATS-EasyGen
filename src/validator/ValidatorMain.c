@@ -306,7 +306,7 @@ static ParserObjectRecordT *ValidatorParseFormatDescription(
 {
     ParserObjectRecordT *tree = NULL;
     ParserErrorT *error = NULL;
-    ParserValidateFormatDescription(formatDescription, &tree, &error);
+    ParserValidateFormatDescriptionEx(formatDescription, &tree, &error);
     if (error != NULL)
     {
         ValidatorProcessParserErrorEx(error);
@@ -314,7 +314,7 @@ static ParserObjectRecordT *ValidatorParseFormatDescription(
     return tree;
 }
 
-ParserObjectRecordWithDataT *ValidatorValidate(
+ParserObjectRecordWithDataT *ValidatorBuildDataTree(
     char *inputFilename,
     char *formatDescription
 )
@@ -371,4 +371,32 @@ ParserObjectRecordWithDataT *ValidatorValidate(
     }
 
     return dataTree;
+}
+
+/*******************************************************************************
+                            CATS interface functions
+*******************************************************************************/
+
+ValidatorErrorT *ValidatorValidate(char *inputFilename, char *formatDescription)
+{
+    ParserObjectRecordWithDataT *data = ValidatorBuildDataTree(
+        inputFilename, formatDescription);
+    ParserDestroyObjectRecordWithData(data);
+    free(data);
+    return ValidatorGetLastError();
+}
+
+const char *ValidatorErrorGetErrorMessage(ValidatorErrorT *error)
+{
+    return error->message;
+}
+
+int ValidatorErrorGetErrorLine(ValidatorErrorT *error)
+{
+    return error->line;
+}
+
+int ValidatorErrorGetErrorPos(ValidatorErrorT *error)
+{
+    return error->pos;
 }

@@ -93,7 +93,7 @@ void initialize(const char* buf);
 void finalize();
 ParserObjectRecordT* parseObjRecord(); // (!)
 
-void ParserValidateFormatDescription(
+void ParserValidateFormatDescriptionEx(
     const char* data,
     ParserObjectRecordT** tree,
     ParserErrorT** error
@@ -104,10 +104,10 @@ void ParserPrintDataRecord(ParserObjectRecordWithDataT *recData);
 const char* ParserGetErrorMessageByCode(int errCode);
 
 // mainly for cats web-server
-ParserErrorT* parserValidate(const char* buf);
-int getErrCode(ParserErrorT* a);
-size_t getErrLine(ParserErrorT* a);
-size_t getErrPos(ParserErrorT* a);
+ParserErrorT *ParserValidateFormatDescription(const char *formatDescription);
+const char *ParserGetErrorMessage(ParserErrorT *error);
+int ParserGetErrorLine(ParserErrorT *error);
+int ParserGetErrorPos(ParserErrorT *error);
 
 ParserObjectRecordWithDataT* ParserAllocateObjectRecordWithData(
     ParserObjectRecordWithDataT *info,

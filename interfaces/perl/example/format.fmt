@@ -1,0 +1,5 @@
+integer name = N, range = [1, 10^4];
+newline;
+seq name = A, length = N;
+   integer name = num, range = [0, 10^8];
+end;

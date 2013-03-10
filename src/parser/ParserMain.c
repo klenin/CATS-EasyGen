@@ -1248,7 +1248,7 @@ void finalize()
     parseErrorDestructor(lastError);
 }
 
-void ParserValidateFormatDescription(
+void ParserValidateFormatDescriptionEx(
     const char* data,
     ParserObjectRecordT** tree,
     ParserErrorT** error
@@ -1351,15 +1351,30 @@ void ParserPrintDataRecord(ParserObjectRecordWithDataT *recData)
     }
 }
 
-//-----------------------------for CATS web-server-----------------------------
-ParserErrorT* parserValidate(const char* data)
+/*******************************************************************************
+                            CATS interface functions
+*******************************************************************************/
+
+ParserErrorT* ParserValidateFormatDescription(const char *formatDescription)
 {
-    ParserErrorT* result;
+    ParserErrorT* error = NULL;
     ParserObjectRecordT* tree;
-    ParserValidateFormatDescription(data, &tree, &result);
-    return result;
+    ParserValidateFormatDescriptionEx(formatDescription, &tree, &error);
+    ParserDestroyObjectRecord(tree);
+    return error;
 }
 
-int getErrCode(ParserErrorT* a) {return a->code;}
-size_t getErrLine(ParserErrorT* a) {return a->line;}
-size_t getErrPos(ParserErrorT* a) {return a->pos;}
+const char *ParserGetErrorMessage(ParserErrorT *error)
+{
+    return ParserGetErrorMessageByCode(error->code);
+}
+
+int ParserGetErrorLine(ParserErrorT *error)
+{
+    return error->line;
+}
+
+int ParserGetErrorPos(ParserErrorT *error)
+{
+    return error->pos;
+}

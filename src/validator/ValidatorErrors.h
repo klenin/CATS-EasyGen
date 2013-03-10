@@ -6,8 +6,8 @@
 typedef struct
 {
     char *message;
-    int32_t line;
-    int32_t pos;
+    int line;
+    int pos;
 } ValidatorErrorT;
 
 ValidatorErrorT *ValidatorGetLastError();

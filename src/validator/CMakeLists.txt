@@ -16,6 +16,7 @@ list(REMOVE_ITEM SOURCES ${TESTER_SOURCE})
 set(SOURCES ${SOURCES} ${FLEX_tokenizer_OUTPUTS})
 
 set(LIBRARIES allocator exceptions file parser)
+set(VALIDATOR_LIBRARY_DEPENDENCIES ${LIBRARIES} PARENT_SCOPE)
 
 add_library(validator STATIC ${SOURCES})
 target_link_libraries(validator ${LIBRARIES})

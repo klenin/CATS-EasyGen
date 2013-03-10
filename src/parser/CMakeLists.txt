@@ -1,4 +1,6 @@
 file(GLOB SOURCES *.c)
 add_library(parser STATIC ${SOURCES})
 
-target_link_libraries(parser allocator exceptions random)
+set(LIBRARIES allocator exceptions random)
+set(PARSER_LIBRARY_DEPENDENCIES ${LIBRARIES} PARENT_SCOPE)
+target_link_libraries(parser ${LIBRARIES})

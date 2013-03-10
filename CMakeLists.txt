@@ -37,3 +37,5 @@ add_subdirectory(src/parser)
 add_subdirectory(src/validator)
 add_subdirectory(src/generator)
 add_subdirectory(src/example)
+
+add_subdirectory(interfaces/perl)

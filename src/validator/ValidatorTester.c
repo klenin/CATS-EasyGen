@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     formatFilename = argv[2];
 
     formatDescription = FileReadTextFile(formatFilename);
-    data = ValidatorValidate(inputFilename, formatDescription);
+    data = ValidatorBuildDataTree(inputFilename, formatDescription);
     error = ValidatorGetLastError();
 
     if (error != NULL)

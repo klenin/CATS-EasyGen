@@ -4,7 +4,12 @@
 #include "Parser.h"
 #include "ValidatorErrors.h"
 
-ParserObjectRecordWithDataT *ValidatorValidate(
+ValidatorErrorT *ValidatorValidate(
+    char *inputFilename,
+    char *formatDescription
+);
+
+ParserObjectRecordWithDataT *ValidatorBuildDataTree(
     char *inputFilename,
     char *formatDescription
 );

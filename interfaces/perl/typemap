@@ -1,0 +1,3 @@
+TYPEMAP
+ParserErrorT * T_PTROBJ
+ValidatorErrorT * T_PTROBJ

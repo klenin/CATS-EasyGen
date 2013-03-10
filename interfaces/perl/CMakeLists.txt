@@ -1,0 +1,68 @@
+find_package(Perl REQUIRED)
+get_filename_component(PERL_DIRECTORY ${PERL_EXECUTABLE} PATH)
+
+find_program(H2XS NAMES h2xs h2xs.bat PATHS ${PERL_DIRECTORY})
+string(COMPARE EQUAL ${H2XS} "H2XS-NOTFOUND" H2XS_NOT_FOUND)
+if(H2XS_NOT_FOUND)
+    message(FATAL_ERROR "Cannot find Perl h2xs tool!")
+endif()
+
+if(WIN32)
+    find_program(NMAKE NAMES nmake)
+    string(COMPARE EQUAL ${NMAKE} "NMAKE-NOTFOUND" NMAKE_NOT_FOUND)
+    if(NMAKE_NOT_FOUND)
+        message(FATAL_ERROR "Cannot find NMake!")
+    endif()
+    set(MAKE_TOOL ${NMAKE})
+else()
+    set(MAKE_TOOL make)
+endif()
+
+set(LIBRARY_NAME FormalInput)
+set(LIBRARY_NAME_FULL CATS::${LIBRARY_NAME})
+string(REPLACE :: - LIBRARY_DIRECTORY ${LIBRARY_NAME_FULL})
+set(OUTPUT_LIBRARY_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/perl/${LIBRARY_DIRECTORY})
+set(TARGET_NAME interface-perl)
+
+set(XS_HEADER ${LIBRARY_NAME}.xs)
+set(INTERFACE_HEADER CatsFormalInput.h)
+set(TYPEMAP typemap)
+
+set(LIBRARY_LINK_LIST "-lvalidator ")
+# See src/validator/CMakeLists.txt and
+#     src/parser/CMakeLists.txt for this lists content.
+foreach(LIB ${VALIDATOR_LIBRARY_DEPENDENCIES} ${PARSER_LIBRARY_DEPENDENCIES})
+    list(APPEND LIBRARY_LINK_LIST "-l${LIB} ")
+endforeach()
+
+add_custom_target(
+    ${TARGET_NAME}
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${LIBRARY_DIRECTORY}
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${OUTPUT_LIBRARY_DIRECTORY}
+    COMMAND ${H2XS} -AOfn ${LIBRARY_NAME_FULL}
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/${INTERFACE_HEADER}
+        ${LIBRARY_DIRECTORY}
+    COMMAND ${H2XS} -Oan ${LIBRARY_NAME_FULL} ${LIBRARY_DIRECTORY}/${INTERFACE_HEADER}
+        -L${CMAKE_LIBRARY_OUTPUT_DIRECTORY} ${LIBRARY_LINK_LIST}
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/${XS_HEADER}
+        ${LIBRARY_DIRECTORY}
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_CURRENT_SOURCE_DIR}/${TYPEMAP}
+        ${LIBRARY_DIRECTORY}
+    COMMAND ${CMAKE_COMMAND} -E chdir ${LIBRARY_DIRECTORY}
+        ${PERL_EXECUTABLE} Makefile.PL
+    COMMAND ${CMAKE_COMMAND} -E chdir ${LIBRARY_DIRECTORY}
+        ${MAKE_TOOL} dist
+    COMMAND ${CMAKE_COMMAND} -E chdir ${LIBRARY_DIRECTORY}
+        ${MAKE_TOOL}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${LIBRARY_DIRECTORY} ${OUTPUT_LIBRARY_DIRECTORY}
+    COMMAND ${CMAKE_COMMAND} -E chdir ${OUTPUT_LIBRARY_DIRECTORY}
+        ${MAKE_TOOL}
+    DEPENDS validator
+            ${PARSER_LIBRARY_DEPENDENCIES}
+            ${VALIDATOR_LIBRARY_DEPENDENCIES}
+)
+add_dependencies(${TARGET_NAME} ${INTERFACE_HEADER} ${XS_HEADER} ${TYPEMAP})
