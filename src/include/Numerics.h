@@ -14,8 +14,6 @@
     #define PRId64 "I64d"
     #define strtoll _strtoi64
 
-    long double strtold(char* str, char** dummy);
-
 #endif
 
 #endif // __LIB_NUMERICS_H__

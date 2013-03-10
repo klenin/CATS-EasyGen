@@ -155,8 +155,7 @@ static long double ValidatorValidateFloat(
     int64_t leftBound, rightBound;
     long double objectValue;
 
-    objectValue = strtold(token->text, NULL);
-    if (errno == ERANGE)
+    if (sscanf(token->text, "%Lf", &objectValue) != 1)
     {
         throwf(ValidatorException, "cannot convert %s to long double value",
             token->text);
