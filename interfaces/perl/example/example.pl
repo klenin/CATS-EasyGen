@@ -15,7 +15,7 @@ if ($error) {
    my $message = CATS::FormalInput::ValidatorErrorGetErrorMessage($error);
    my $line = CATS::FormalInput::ValidatorErrorGetErrorLine($error);
    my $pos = CATS::FormalInput::ValidatorErrorGetErrorPos($error);
-   print "($line:$pos) $message";
+   print "($line:$pos) $message\n";
 } else {
     print "OK\n";
 }

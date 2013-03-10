@@ -18,8 +18,8 @@ Also see http://imcs.dvgu.ru/works/work?wid=2562 (in Russian).
 
 ##Build Requirements
 ### C code
-    * CMake[cmake download] 2.6+
-    * flex[flex download] 2.5+
+    * CMake 2.6+, http://www.cmake.org/cmake/resources/software.html
+    * flex 2.5+, http://flex.sourceforge.net/
 ### Perl interface
     * Perl
     * h2xs (comes with Perl)
@@ -48,6 +48,8 @@ Also see http://imcs.dvgu.ru/works/work?wid=2562 (in Russian).
     nmake interface-perl
     cd ../lib/perl/CATS-FormalInput
     nmake install
+    cd ../../../interfaces/perl/example
+    perl example.pl
 
-[flex download]: http://flex.sourceforge.net/#downloads
-[cmake download]: http://www.cmake.org/cmake/resources/software.html
+#### Unix
+Use Windows scenario but with `make` instead of `nmake`.
