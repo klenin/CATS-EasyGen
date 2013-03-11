@@ -1,8 +1,8 @@
-//#define PARSER_DEBUG_MODE
-#ifdef PARSER_DEBUG_MODE
-
 #include <stdio.h>
 #include <string.h>
+
+//#define PARSER_DEBUG_MODE
+#ifdef PARSER_DEBUG_MODE
 
 #include "ParserDebug.h"
 

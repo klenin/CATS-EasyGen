@@ -18,6 +18,25 @@ set(SOURCES ${SOURCES} ${FLEX_tokenizer_OUTPUTS})
 set(LIBRARIES allocator exceptions file parser)
 set(VALIDATOR_LIBRARY_DEPENDENCIES ${LIBRARIES} PARENT_SCOPE)
 
+if(CMAKE_COMPILER_IS_GNUCC)
+    set_source_files_properties(
+        ValidatorMain.c
+        PROPERTIES COMPILE_FLAGS -Wno-unused-parameter)
+    set_source_files_properties(
+        ${FLEX_tokenizer_OUTPUTS}
+        PROPERTIES COMPILE_FLAGS -Wno-unused-function)
+elseif(MSVC)
+    # C4244: http://msdn.microsoft.com/en-us/library/th7a07tz.aspx
+    # C4627: http://msdn.microsoft.com/en-us/library/6kck0s93.aspx
+    # C4996: http://msdn.microsoft.com/en-us/library/ttcz0bys.aspx
+    # C6011: http://msdn.microsoft.com/en-us/library/2ayc37ac.aspx
+    # C6385: http://msdn.microsoft.com/en-us/library/ms182088.aspx
+    # C28278: http://msdn.microsoft.com/en-us/library/hh739083.aspx
+    set_source_files_properties(
+        ${FLEX_tokenizer_OUTPUTS}
+        PROPERTIES COMPILE_FLAGS "/wd 4244 /wd 4267 /wd 4996 /wd 6011 /wd 6385 /wd 28278")
+endif()
+
 add_library(validator STATIC ${SOURCES})
 target_link_libraries(validator ${LIBRARIES})
 
