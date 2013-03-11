@@ -1,0 +1,2 @@
+integer name = N, range = [-2^63, 2^63-1];
+integer name = M, range = [-2^63, 2^63-1];
