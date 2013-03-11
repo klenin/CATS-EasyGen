@@ -14,30 +14,30 @@
 #include "ValidatorExceptions.h"
 #include "ValidatorTokenizer.h"
 
-#define PARSER_CALL(call) do { call; ValidatorProcessParserError(); } while(0)
+#define PARSER_CALL(call) do { call; ProcessParserError(); } while(0)
 
 #define PARSER_ERROR_PREFIX "parser error: "
 
 #define DECLARE_VALIDATOR(name) \
     static void name(ParserObjectT *object, ParserObjectRecordWithDataT *dataTree)
 
-DECLARE_VALIDATOR(ValidatorValidateNewline);
-DECLARE_VALIDATOR(ValidatorValidateSoftline);
-DECLARE_VALIDATOR(ValidatorValidateGenericObject);
-DECLARE_VALIDATOR(ValidatorValidateSequence);
-DECLARE_VALIDATOR(ValidatorValidateEnd);
+DECLARE_VALIDATOR(ValidateNewline);
+DECLARE_VALIDATOR(ValidateSoftline);
+DECLARE_VALIDATOR(ValidateGenericObject);
+DECLARE_VALIDATOR(ValidateSequence);
+DECLARE_VALIDATOR(ValidateEnd);
 
 static void
     (*g_ValidatorFunctions[PARSER_OBJECT_KINDS_COUNT])
         (ParserObjectT*, ParserObjectRecordWithDataT*) =
 {
-    ValidatorValidateNewline,
-    ValidatorValidateSoftline,
-    ValidatorValidateGenericObject,
-    ValidatorValidateGenericObject,
-    ValidatorValidateGenericObject,
-    ValidatorValidateSequence,
-    ValidatorValidateEnd
+    ValidateNewline,
+    ValidateSoftline,
+    ValidateGenericObject,
+    ValidateGenericObject,
+    ValidateGenericObject,
+    ValidateSequence,
+    ValidateEnd
 };
 
 static const ValidatorTokenizerTokenTypeT
@@ -52,7 +52,7 @@ static const ValidatorTokenizerTokenTypeT
     VTT_EOF      // PARSER_OBJECT_KIND_END
 };
 
-static void ValidatorProcessParserErrorEx(ParserErrorT *error)
+static void ProcessParserErrorEx(ParserErrorT *error)
 {
     const char *parserMessage = ParserGetErrorMessageByCode(error->code);
     char *finalMessage;
@@ -65,15 +65,15 @@ static void ValidatorProcessParserErrorEx(ParserErrorT *error)
     throw(ParserException, finalMessage);
 }
 
-static void ValidatorProcessParserError()
+static void ProcessParserError()
 {
     if (ParserIsErrorRaised())
     {
-        ValidatorProcessParserErrorEx(ParserGetLastError());
+        ProcessParserErrorEx(ParserGetLastError());
     }
 }
 
-static ValidatorTokenizerTokenT *ValidatorSafeGetNextToken()
+static ValidatorTokenizerTokenT *NextToken()
 {
     ValidatorTokenizerTokenT *token = ValidatorTokenizerNextToken();
     if (token == NULL)
@@ -83,7 +83,7 @@ static ValidatorTokenizerTokenT *ValidatorSafeGetNextToken()
     return token;
 }
 
-static void ValidatorAssertObjectType(
+static void AssertObjKind(
     ParserObjectKindT expected,
     ValidatorTokenizerTokenTypeT actual
 )
@@ -96,16 +96,16 @@ static void ValidatorAssertObjectType(
     }
 }
 
-DECLARE_VALIDATOR(ValidatorValidateNewline)
+DECLARE_VALIDATOR(ValidateNewline)
 {
-    ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
-    ValidatorAssertObjectType(object->objKind, token->type);
+    ValidatorTokenizerTokenT *token = NextToken();
+    AssertObjKind(object->objKind, token->type);
     ValidatorTokenizerDestroyToken(token);
 }
 
-DECLARE_VALIDATOR(ValidatorValidateSoftline)
+DECLARE_VALIDATOR(ValidateSoftline)
 {
-    ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
+    ValidatorTokenizerTokenT *token = NextToken();
     if (VTT_NEWLINE == token->type)
     {
         // Skip newline.
@@ -118,7 +118,7 @@ DECLARE_VALIDATOR(ValidatorValidateSoftline)
     }
 }
 
-static void ValidatorValidateInteger(
+static void InternalValidateInteger(
     ValidatorTokenizerTokenT *token,
     ParserObjectWithDataT objectData
 )
@@ -147,7 +147,7 @@ static void ValidatorValidateInteger(
     PARSER_CALL(ParserSetIntegerValue(objectData, objectValue));
 }
 
-static long double ValidatorValidateFloat(
+static long double InternalValidateFloat(
     ValidatorTokenizerTokenT *token,
     ParserObjectWithDataT objectData
 )
@@ -174,7 +174,7 @@ static long double ValidatorValidateFloat(
     return objectValue;
 }
 
-static char *ValidatorValidateString(
+static char *InternalValidateString(
     ValidatorTokenizerTokenT *token,
     ParserObjectWithDataT objectData
 )
@@ -214,13 +214,13 @@ static char *ValidatorValidateString(
     return objectValue;
 }
 
-DECLARE_VALIDATOR(ValidatorValidateGenericObject)
+DECLARE_VALIDATOR(ValidateGenericObject)
 {
-    ValidatorTokenizerTokenT *token = ValidatorSafeGetNextToken();
+    ValidatorTokenizerTokenT *token = NextToken();
     char *objectName;
     ParserObjectWithDataT objectData;
 
-    ValidatorAssertObjectType(object->objKind, token->type);
+    AssertObjKind(object->objKind, token->type);
     objectName = object->attrList[PARSER_OBJECT_ATTR_NAME].strVal;
     PARSER_CALL(objectData = ParserFindObjectByName(*dataTree, objectName));
 
@@ -228,17 +228,17 @@ DECLARE_VALIDATOR(ValidatorValidateGenericObject)
     {
         case PARSER_OBJECT_KIND_INTEGER:
         {
-            ValidatorValidateInteger(token, objectData);
+            InternalValidateInteger(token, objectData);
             break;
         }
         case PARSER_OBJECT_KIND_FLOAT:
         {
-            ValidatorValidateFloat(token, objectData);
+            InternalValidateFloat(token, objectData);
             break;
         }
         case PARSER_OBJECT_KIND_STRING:
         {
-            ValidatorValidateString(token, objectData);
+            InternalValidateString(token, objectData);
             break;
         }
         default:
@@ -251,7 +251,7 @@ DECLARE_VALIDATOR(ValidatorValidateGenericObject)
     ValidatorTokenizerDestroyToken(token);
 }
 
-static void ValidatorValidateObjectRecord(ParserObjectRecordWithDataT *recordData)
+static void ValidateObjectRecord(ParserObjectRecordWithDataT *recordData)
 {
     ParserObjectT *currentObject = NULL;
     ParserObjectRecordIteratorT *iterator = NULL;
@@ -272,7 +272,7 @@ static void ValidatorValidateObjectRecord(ParserObjectRecordWithDataT *recordDat
     }
 }
 
-DECLARE_VALIDATOR(ValidatorValidateSequence)
+DECLARE_VALIDATOR(ValidateSequence)
 {
     char *objectName;
     ParserObjectWithDataT objectData;
@@ -287,16 +287,16 @@ DECLARE_VALIDATOR(ValidatorValidateSequence)
     {
         ParserObjectRecordWithDataT item;
         PARSER_CALL(item = ParserGetSequenceElement(objectData, i));
-        ValidatorValidateObjectRecord(&item);
+        ValidateObjectRecord(&item);
     }
 }
 
-DECLARE_VALIDATOR(ValidatorValidateEnd)
+DECLARE_VALIDATOR(ValidateEnd)
 {
     // Dummy function.
 }
 
-static ParserObjectRecordT *ValidatorParseFormatDescription(
+static ParserObjectRecordT *ParseFormatDescription(
     char *formatDescription
 )
 {
@@ -305,7 +305,7 @@ static ParserObjectRecordT *ValidatorParseFormatDescription(
     ParserValidateFormatDescriptionEx(formatDescription, &tree, &error);
     if (error != NULL)
     {
-        ValidatorProcessParserErrorEx(error);
+        ProcessParserErrorEx(error);
     }
     return tree;
 }
@@ -327,13 +327,13 @@ ParserObjectRecordWithDataT *ValidatorBuildDataTree(
         {
             inputHandle = FileOpen(inputFilename, "r");
             ValidatorTokenizerSetInput(inputHandle);
-            formatTree = ValidatorParseFormatDescription(formatDescription);
+            formatTree = ParseFormatDescription(formatDescription);
             dataTree = AllocateBuffer(sizeof(ParserObjectRecordWithDataT));
             dataTree->pointerToData = NULL;
             dataTree->recPart = formatTree;
             PARSER_CALL(
                 dataTree = ParserAllocateObjectRecordWithData(dataTree, 1));
-            ValidatorValidateObjectRecord(dataTree);
+            ValidateObjectRecord(dataTree);
         }
         catch (ParserException)
         {
