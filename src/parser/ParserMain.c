@@ -1270,12 +1270,14 @@ void ParserValidateFormatDescriptionEx(
             genParseError(E_EXCEPTION);
         }
     }
-    finalize();
+
     if (ParserIsErrorRaised())
     {
         *error = AllocateBuffer(sizeof(ParserErrorT));
         copyErrToErr(*error, lastError);
     }
+
+    finalize();
 }
 
 static void ParserPrintDataObject(ParserObjectWithDataT *objData)
