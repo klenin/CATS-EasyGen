@@ -1176,9 +1176,8 @@ ParserObjectRecordWithDataT ParserGetSequenceElement(
         data->value = AllocateArray(n, sizeof(ParserObjectRecordDataT));
         d = (ParserObjectRecordDataT*)(data->value);
         for (i = 0; i < n; i++) {
-            tmp = AllocateBuffer(sizeof(ParserObjectRecordDataT));
-            memcpy(&(d[i]), tmp, sizeof(ParserObjectRecordDataT));
-            d[i].data = 0; d[i].parentData = data;
+            d[i].data = 0;
+            d[i].parentData = data;
         }
     }
     res.recPart = a->rec;
@@ -1353,6 +1352,7 @@ void ParserPrintDataRecord(ParserObjectRecordWithDataT *recData)
         objData.pointerToData = &(recData->pointerToData->data[iterator->index]);
         ParserPrintDataObject(&objData);
     }
+    free(iterator);
 }
 
 /*******************************************************************************

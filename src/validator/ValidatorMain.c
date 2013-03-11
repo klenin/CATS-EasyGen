@@ -148,7 +148,7 @@ static void InternalValidateInteger(
     PARSER_CALL(ParserSetIntegerValue(objectData, objectValue));
 }
 
-static long double InternalValidateFloat(
+static void InternalValidateFloat(
     ValidatorTokenizerTokenT *token,
     ParserObjectWithDataT objectData
 )
@@ -171,11 +171,9 @@ static long double InternalValidateFloat(
     }
 
     PARSER_CALL(ParserSetFloatValue(objectData, objectValue));
-
-    return objectValue;
 }
 
-static char *InternalValidateString(
+static void InternalValidateString(
     ValidatorTokenizerTokenT *token,
     ParserObjectWithDataT objectData
 )
@@ -208,11 +206,8 @@ static char *InternalValidateString(
         }
     }
 
-    objectValue = AllocateBuffer(valueLength);
-    strcpy(objectValue, token->text);
+    objectValue = token->text;
     PARSER_CALL(ParserSetStringValue(objectData, objectValue));
-
-    return objectValue;
 }
 
 DECLARE_VALIDATOR(ValidateGenericObject)
