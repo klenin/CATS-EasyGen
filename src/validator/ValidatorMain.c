@@ -253,12 +253,9 @@ DECLARE_VALIDATOR(ValidatorValidateGenericObject)
 
 static void ValidatorValidateObjectRecord(ParserObjectRecordWithDataT *recordData)
 {
-    E4C_DECLARE_CONTEXT_STATUS
-
     ParserObjectT *currentObject = NULL;
     ParserObjectRecordIteratorT *iterator = NULL;
 
-    E4C_REUSE_CONTEXT
     try
     {
         for (iterator = ParserObjectRecordGetFrontElement(recordData->recPart);
@@ -273,7 +270,6 @@ static void ValidatorValidateObjectRecord(ParserObjectRecordWithDataT *recordDat
     {
         free(iterator);
     }
-    E4C_CLOSE_CONTEXT
 }
 
 DECLARE_VALIDATOR(ValidatorValidateSequence)
@@ -319,50 +315,51 @@ ParserObjectRecordWithDataT *ValidatorBuildDataTree(
     char *formatDescription
 )
 {
-    E4C_DECLARE_CONTEXT_STATUS
-
+    E4C_BOOL isUncaught = E4C_FALSE;
     FILE *inputHandle = NULL;
     ParserObjectRecordT *formatTree = NULL;
     ParserObjectRecordWithDataT *dataTree = NULL;
 
-    E4C_REUSE_CONTEXT
-    try
+    // Need to create an exception context before catching exceptions.
+    e4c_reusing_context(isUncaught, E4C_TRUE)
     {
-        inputHandle = FileOpen(inputFilename, "r");
-        ValidatorTokenizerSetInput(inputHandle);
-        formatTree = ValidatorParseFormatDescription(formatDescription);
-
-        dataTree = AllocateBuffer(sizeof(ParserObjectRecordWithDataT));
-        dataTree->pointerToData = NULL;
-        dataTree->recPart = formatTree;
-        PARSER_CALL(dataTree = ParserAllocateObjectRecordWithData(dataTree, 1));
-        ValidatorValidateObjectRecord(dataTree);
-    }
-    catch (ParserException)
-    {
-        // Validator error already raised, just catch.
-    }
-    catch (ValidatorException)
-    {
-        ValidatorRaiseErrorEx(
-            e4c_get_exception()->message,
-            ValidatorTokenizerGetCurrentLine(),
-            ValidatorTokenizerGetCurrentPosition());
-    }
-    catch (RuntimeException)
-    {
-        ValidatorRaiseError(e4c_get_exception()->message);
-    }
-    finally
-    {
-        if (inputHandle != NULL)
+        try
         {
-            fclose(inputHandle);
+            inputHandle = FileOpen(inputFilename, "r");
+            ValidatorTokenizerSetInput(inputHandle);
+            formatTree = ValidatorParseFormatDescription(formatDescription);
+            dataTree = AllocateBuffer(sizeof(ParserObjectRecordWithDataT));
+            dataTree->pointerToData = NULL;
+            dataTree->recPart = formatTree;
+            PARSER_CALL(
+                dataTree = ParserAllocateObjectRecordWithData(dataTree, 1));
+            ValidatorValidateObjectRecord(dataTree);
+        }
+        catch (ParserException)
+        {
+            // Validator error already raised, just catch.
+        }
+        catch (ValidatorException)
+        {
+            ValidatorRaiseErrorEx(
+                e4c_get_exception()->message,
+                ValidatorTokenizerGetCurrentLine(),
+                ValidatorTokenizerGetCurrentPosition());
+        }
+        catch (RuntimeException)
+        {
+            ValidatorRaiseError(e4c_get_exception()->message);
+        }
+        finally
+        {
+            if (inputHandle != NULL)
+            {
+                fclose(inputHandle);
+            }
         }
     }
-    E4C_CLOSE_CONTEXT
 
-    if (E4C_WAS_EXCEPTION_THROWN() || ValidatorIsErrorRaised())
+    if (ValidatorIsErrorRaised())
     {
         ParserDestroyObjectRecordWithData(dataTree);
         free(dataTree);

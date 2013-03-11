@@ -3357,11 +3357,6 @@ E4C_NORETURN;
 
 # endif
 
-# define E4C_DECLARE_CONTEXT_STATUS volatile int e4c_status = E4C_FALSE;
-# define E4C_REUSE_CONTEXT e4c_reusing_context(e4c_status, E4C_TRUE){
-# define E4C_CLOSE_CONTEXT }
-# define E4C_WAS_EXCEPTION_THROWN() (e4c_status == E4C_TRUE)
-
 /*@=exportany@*/
 
 

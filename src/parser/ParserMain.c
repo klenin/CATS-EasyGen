@@ -1254,23 +1254,23 @@ void ParserValidateFormatDescriptionEx(
     ParserErrorT** error
 )
 {
-    E4C_DECLARE_CONTEXT_STATUS
+    E4C_BOOL isUncaught = E4C_FALSE;
 
-    E4C_REUSE_CONTEXT
-    try
+    // Need to create an exception context before catching exceptions.
+    e4c_reusing_context(isUncaught, E4C_TRUE)
     {
-        initialize(data);
-        *tree = parseObjRecord();
+        try
+        {
+            initialize(data);
+            *tree = parseObjRecord();
+        }
+        catch (RuntimeException)
+        {
+            genParseError(E_EXCEPTION);
+        }
     }
-    catch (RuntimeException)
-    {
-        // TODO: Convert exceptions to errors, add message to error structure.
-        genParseError(E_EXCEPTION);
-    }
-    E4C_CLOSE_CONTEXT
-
     finalize();
-    if (E4C_WAS_EXCEPTION_THROWN() || ParserIsErrorRaised())
+    if (ParserIsErrorRaised())
     {
         *error = AllocateBuffer(sizeof(ParserErrorT));
         copyErrToErr(*error, lastError);
