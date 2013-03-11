@@ -62,6 +62,7 @@ static void ProcessParserErrorEx(ParserErrorT *error)
     finalMessage = AllocateBuffer(messageLength + 1);
     sprintf(finalMessage, PARSER_ERROR_PREFIX"%s", parserMessage);
     ValidatorRaiseErrorEx(finalMessage, error->line, error->pos);
+    free(error);
     throw(ParserException, finalMessage);
 }
 
