@@ -1213,7 +1213,7 @@ void ParserDestroyObjectRecordWithData(ParserObjectRecordWithDataT *info)
     int i;
     if (info == NULL) return;
     if (info->pointerToData == NULL) return;
-    for (i = 0; i < info->recPart->n; i++)
+    for (i = 0; i < info->recPart->n; i++) {
         tmp.objPart = &(info->recPart->seq[i]);
         tmp.pointerToData = &(info->pointerToData->data[i]);
         if (tmp.pointerToData) {
@@ -1228,8 +1228,9 @@ void ParserDestroyObjectRecordWithData(ParserObjectRecordWithDataT *info)
                     break;
                 default:
                     genParseError(E_UNEXPECTED_OBJECT_KIND);
-          }
-      }
+            }
+        }
+    }
 }
 
 //-----------------------------initialize & finalize --------------------------
