@@ -93,10 +93,9 @@ void initialize(const char* buf);
 void finalize();
 ParserObjectRecordT* parseObjRecord(); // (!)
 
-void ParserValidateFormatDescriptionEx(
+ParserErrorT* ParserValidateFormatDescriptionEx(
     const char* data,
-    ParserObjectRecordT** tree,
-    ParserErrorT** error
+    ParserObjectRecordT** tree
 ); // (!)
 
 void ParserPrintDataRecord(ParserObjectRecordWithDataT *recData);

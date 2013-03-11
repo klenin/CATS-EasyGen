@@ -1249,13 +1249,13 @@ void finalize()
     parseErrorDestructor(lastError);
 }
 
-void ParserValidateFormatDescriptionEx(
+ParserErrorT* ParserValidateFormatDescriptionEx(
     const char* data,
-    ParserObjectRecordT** tree,
-    ParserErrorT** error
+    ParserObjectRecordT** tree
 )
 {
     E4C_BOOL isUncaught = E4C_FALSE;
+    ParserErrorT* error = NULL;
 
     // Need to create an exception context before catching exceptions.
     e4c_reusing_context(isUncaught, E4C_TRUE)
@@ -1273,11 +1273,12 @@ void ParserValidateFormatDescriptionEx(
 
     if (ParserIsErrorRaised())
     {
-        *error = AllocateBuffer(sizeof(ParserErrorT));
-        copyErrToErr(*error, lastError);
+        error = AllocateBuffer(sizeof(ParserErrorT));
+        copyErrToErr(error, lastError);
     }
 
     finalize();
+    return error;
 }
 
 static void ParserPrintDataObject(ParserObjectWithDataT *objData)
@@ -1362,7 +1363,7 @@ ParserErrorT* ParserValidateFormatDescription(const char *formatDescription)
 {
     ParserErrorT* error = NULL;
     ParserObjectRecordT* tree;
-    ParserValidateFormatDescriptionEx(formatDescription, &tree, &error);
+    error = ParserValidateFormatDescriptionEx(formatDescription, &tree);
     ParserDestroyObjectRecord(tree);
     return error;
 }

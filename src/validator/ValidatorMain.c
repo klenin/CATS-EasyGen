@@ -302,12 +302,14 @@ static ParserObjectRecordT *ParseFormatDescription(
 )
 {
     ParserObjectRecordT *tree = NULL;
-    ParserErrorT *error = NULL;
-    ParserValidateFormatDescriptionEx(formatDescription, &tree, &error);
+    ParserErrorT *error = ParserValidateFormatDescriptionEx(
+        formatDescription, &tree);
+
     if (error != NULL)
     {
         ProcessParserErrorEx(error);
     }
+
     return tree;
 }
 
