@@ -10,12 +10,14 @@
     #define PRId64 "I64d"
     #define PRLD "f"
     #define PRLDType double
+    #define SCLD PRLD
 
 #elif defined __GNUC__
 
     #include <inttypes.h>
     #define PRLD "Lf"
     #define PRLDType long double
+    #define SCLD PRLD
 
 #elif defined _MSC_VER
 
