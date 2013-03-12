@@ -6,7 +6,7 @@ int main(int argc, char* argv[])
         testInfo super(argc, argv);
         super.autoGen();
     } catch (genError a) {
-        cout << a.err();
+        cout << a.err() << endl;
     }
     return 0;
 }

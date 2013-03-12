@@ -40,6 +40,18 @@ static int line, pos;
 static struct token* curToken;
 static ParserErrorT* lastError;
 
+static void
+    (*g_ObjectGenerators[PARSER_OBJECT_KINDS_COUNT])(ParserObjectWithDataT) =
+{
+    NULL, // Newline
+    NULL, // Softline
+    autoGenInt,
+    autoGenFloat,
+    autoGenStr,
+    autoGenSeq,
+    NULL // End
+};
+
 static void genParseError(int errCode);
 
 //------------------------------ work with memory procedures-------------------
@@ -1101,14 +1113,11 @@ void autoGenRecord(ParserObjectRecordWithDataT info)
         tmp.objPart = &(info.recPart->seq[i]);
         tmp.pointerToData = &(info.pointerToData->data[i]);
         objk = (info.recPart->seq[i]).objKind;
-        if (objk != PARSER_OBJECT_KIND_SEQUENCE && tmp.pointerToData->value) continue;
-        switch (objk) {
-            case PARSER_OBJECT_KIND_INTEGER: autoGenInt(tmp); break;
-            case PARSER_OBJECT_KIND_FLOAT: autoGenFloat(tmp); break;
-            case PARSER_OBJECT_KIND_STRING: autoGenStr(tmp); break;
-            case PARSER_OBJECT_KIND_SEQUENCE: autoGenSeq(tmp); break;
-            default:
-                genParseError(E_UNEXPECTED_OBJECT_KIND);
+        if (g_ObjectGenerators[objk] != NULL &&
+            (objk == PARSER_OBJECT_KIND_SEQUENCE ||
+             tmp.pointerToData->value == NULL))
+        {
+                g_ObjectGenerators[objk](tmp);
         }
     }
 }
@@ -1163,7 +1172,7 @@ ParserObjectRecordWithDataT ParserGetSequenceElement(
     ParserObjectDataT* data = info.pointerToData;
     ParserObjectT* a = info.objPart;
     ParserObjectRecordWithDataT res;
-    ParserObjectRecordDataT* d, *tmp;
+    ParserObjectRecordDataT* d;
     int n = ParserGetSequenceLength(info);
     int i;
     res.pointerToData = 0; res.recPart = 0;
