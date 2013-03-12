@@ -1321,9 +1321,9 @@ static void ParserPrintDataObject(ParserObjectWithDataT *objData)
             }
             else if (objKind == PARSER_OBJECT_KIND_FLOAT)
             {
-                printf("%.*lf",
+                printf("%.*" PRLD,
                     (uint32_t)ParserGetFloatDigits(*objData),
-                    (double)ParserGetFloatValue(*objData));
+                    (PRLDType)ParserGetFloatValue(*objData));
             }
             wasSpaceChar = 0;
             break;

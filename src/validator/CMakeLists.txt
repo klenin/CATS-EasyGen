@@ -15,7 +15,7 @@ file(GLOB SOURCES *.c)
 list(REMOVE_ITEM SOURCES ${TESTER_SOURCE})
 set(SOURCES ${SOURCES} ${FLEX_tokenizer_OUTPUTS})
 
-set(LIBRARIES allocator exceptions file parser)
+set(LIBRARIES allocator exceptions file numerics parser)
 set(VALIDATOR_LIBRARY_DEPENDENCIES ${LIBRARIES} PARENT_SCOPE)
 
 if(CMAKE_COMPILER_IS_GNUCC)

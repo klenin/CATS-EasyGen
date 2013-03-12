@@ -156,7 +156,7 @@ static void InternalValidateFloat(
     int64_t leftBound, rightBound;
     long double objectValue;
 
-    if (sscanf(token->text, "%Lf", &objectValue) != 1)
+    if (!ConvertStringToLongDouble(token->text, &objectValue))
     {
         throwf(ValidatorException, "cannot convert %s to long double value",
             token->text);
