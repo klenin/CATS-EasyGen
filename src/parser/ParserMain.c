@@ -1351,6 +1351,12 @@ void ParserPrintDataRecord(ParserObjectRecordWithDataT *recData)
 {
     ParserObjectT *object = NULL;
     ParserObjectRecordIteratorT *iterator = NULL;
+
+    if (recData == NULL)
+    {
+        return;
+    }
+
     for (iterator = ParserObjectRecordGetFrontElement(recData->recPart);
                     ParserObjectRecordIteratorIsValid(iterator);
                     ParserObjectRecordIteratorAdvance(iterator))

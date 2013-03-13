@@ -1,12 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "Exceptions.h"
 #include "File.h"
 #include "Parser.h"
 #include "Validator.h"
 
 int main(int argc, char **argv)
 {
+    E4C_BOOL isUncaught = E4C_FALSE;
     ValidatorErrorT *error = NULL;
     char *inputFilename = NULL;
     char *formatFilename = NULL;
@@ -22,9 +24,19 @@ int main(int argc, char **argv)
     inputFilename = argv[1];
     formatFilename = argv[2];
 
-    formatDescription = FileReadTextFile(formatFilename);
-    data = ValidatorBuildDataTree(inputFilename, formatDescription);
-    error = ValidatorGetLastError();
+    e4c_reusing_context(isUncaught, E4C_TRUE)
+    {
+        try
+        {
+            formatDescription = FileReadTextFile(formatFilename);
+            data = ValidatorBuildDataTree(inputFilename, formatDescription);
+            error = ValidatorGetLastError();
+        }
+        catch (RuntimeException)
+        {
+            printf(e4c_get_exception()->message);
+        }
+    }
 
     if (error != NULL)
     {
